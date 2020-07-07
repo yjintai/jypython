@@ -1,0 +1,9 @@
+﻿this is a instruction file for git and github:
+
+git cd /d/Works/python/jypython
+git status
+git add .
+rem git add xxx.py
+git commit -m "change list"
+rem sync the git local Repository to github Repository "jypython"
+git push jypython master
