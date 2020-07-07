@@ -6,4 +6,9 @@ git add .
 rem git add xxx.py
 git commit -m "change list"
 rem sync the git local Repository to github Repository "jypython"
-git push jypython master
+
+git remote add origin https://github.com/yjintai/jypython.git
+git push origin master
+
+
+git clone https://github.com/yjintai/jypython.git
