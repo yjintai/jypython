@@ -1,12 +1,16 @@
-﻿this is a instruction file for git and github:
+this is a instruction file for git and github:
+
 
 git cd /d/Works/python/jypython
 git status
 git add .
-rem git add xxx.py
+REM git add xxx.py
 git commit -m "change list"
-rem sync the git local Repository to github Repository "jypython"
 
+git checkout -- xxx.py  // cancel the update in workarea to repository or buffer cache.
+
+
+REM sync the git local Repository to github Repository "jypython"
 git remote add origin https://github.com/yjintai/jypython.git
 git push -u origin master
 git push origin master
@@ -15,5 +19,15 @@ git remote add jypython https://github.com/yjintai/jypython.git
 git push -u jypython master
 git push jypython master
 
+git cd /d/Works/python/jypython
 git clone https://github.com/yjintai/jypython.git
 
+分支:
+查看分支：git branch
+创建分支：git branch <name>
+切换分支：git checkout <name>或者git switch <name>
+创建+切换分支：git checkout -b <name>或者git switch -c <name>
+合并某分支到当前分支：git merge <name>
+删除分支：git branch -d <name>
+git merge dev  //Fast forward模式，但这种模式下，删除分支后，会丢掉分支信息。
+git merge --no-ff -m "merge with no-ff" dev //强制禁用Fast forward模式，Git就会在merge时生成一个新的commit，这样，从分支历史上就可以看出分支信息
