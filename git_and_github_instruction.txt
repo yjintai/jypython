@@ -1,6 +1,6 @@
 this is a instruction file for git and github:
 
-
+本地操作：
 git cd /d/Works/python/jypython
 git status
 git add .
@@ -9,25 +9,75 @@ git commit -m "change list"
 
 git checkout -- xxx.py  // cancel the update in workarea to repository or buffer cache.
 
+git log
+git log --pretty=oneline
+git reflog
 
+git reset --hard HEAD~2 //回退2个版本
+git reset --hard HEAD^^  //回退2个版本 
+git reset --hard commit_id
+
+远程管理：
 REM sync the git local Repository to github Repository "jypython"
-git remote add origin https://github.com/yjintai/jypython.git
+git remote add origin git@github.com:yjintai/jypython.git //SSH with security
 git push -u origin master
 git push origin master
 
-git remote add jypython https://github.com/yjintai/jypython.git
+git remote add jypython https://github.com/yjintai/jypython.git  //HTTP
 git push -u jypython master
 git push jypython master
 
 git cd /d/Works/python/jypython
 git clone https://github.com/yjintai/jypython.git
 
+git remote //显示远程库名称
+git remote -v //显示远程库更详细的信息
+
 分支:
 查看分支：git branch
-创建分支：git branch <name>
-切换分支：git checkout <name>或者git switch <name>
-创建+切换分支：git checkout -b <name>或者git switch -c <name>
-合并某分支到当前分支：git merge <name>
-删除分支：git branch -d <name>
+创建分支：git branch dev
+切换分支：git checkout dev 或者git switch dev
+创建+切换分支：git checkout -b dev或者git switch -c dev
+合并某分支到当前分支：git merge dev
+删除分支：git branch -d dev
 git merge dev  //Fast forward模式，但这种模式下，删除分支后，会丢掉分支信息。
 git merge --no-ff -m "merge with no-ff" dev //强制禁用Fast forward模式，Git就会在merge时生成一个新的commit，这样，从分支历史上就可以看出分支信息
+
+git stash  //储存现场
+git stash list  //查看储存现场
+git stash pop //恢复现场  == git stash apply (恢复)& git stash drop （删除现场）
+
+git cherry-pick 4c805e2 //只MERGE某个特定的提交
+
+git branch -D feature-vulcan  // -D 强行删除某个分支
+
+
+多人协作的工作模式：
+git clone https://github.com/yjintai/jypython.git //克隆远程库到本地
+git checkout -b dev origin/dev //在本地创建和远程分支对应的分支
+git branch --set-upstream-to=origin/dev dev //创建本地分支和远程分支的链接
+git pull //试图合并到本地分支
+git push origin dev //推送自己的修改到dev分支；
+如果合并有冲突，则解决冲突，并在本地提交；
+没有冲突或者解决掉冲突后，再用git push origin dev
+
+git rebase //整理分支
+
+标签管理：
+git tag v1.0
+git tag
+git tag v0.9 f52c633
+git show v0.9
+git tag -a v0.1 -m "version 0.1 released" 1094adb
+git log --pretty=oneline --abbrev-commit
+git tag -d v0.1
+
+git push origin v1.0
+git push origin --tags
+
+//delete tags from server:
+git tag -d v0.1
+git push origin :refs/tags/v0.1
+
+
+
