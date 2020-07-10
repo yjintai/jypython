@@ -9,14 +9,14 @@ def consumer():
         n = yield r
         if not n:
             return
-        time.sleep(0.5)
+        time.sleep(5)
         print('[CONSUMER] Consuming %s...' % n)
-        r = '200 OK'
+        r = '%s OK' %n
 
 def produce(c):
     c.send(None)
     n = 0
-    while n < 10:
+    while n < 5:
         n = n + 1
         print('[PRODUCER] Producing %s...' % n)
         r = c.send(n)
