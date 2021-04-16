@@ -34,8 +34,7 @@ def get_stock_basic() :
 
     engine=sqlalchemy.create_engine('mysql+pymysql://root:root@127.0.0.1/test?charset=utf8mb4')
     try:
-         #先一次性入库，异常后逐条入库
-        pandas.io.sql.to_sql(frame=data, name='tb_stock_basic', con=engine, schema='test', if_exists='replace', index=False) 
+        pandas.io.sql.to_sql(frame=data, name='tb_stock_basic', con=engine, schema='test', if_exists='replace', index=True) 
     except:
         print('股票列表数据入库异常!')
     finally:
