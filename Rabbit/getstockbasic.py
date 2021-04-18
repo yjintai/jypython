@@ -17,73 +17,51 @@ import pymysql
 
 #需修改的参数
 stock_list_file = 'd:/stock_list.csv'
-
+sqlenginestr='mysql+pymysql://root:root@127.0.0.1/msstock?charset=utf8mb4'
+databasename = 'msstock'
 #tushare token
 tushare_token='e239683c699765e4e49b43dff2cf7ed7fc232cc49f7992dab1ab7624'
 
-
-
-
 #股票列表
-def get_stock_basic() :
-    print('start to download data') 
+def initiate():
+    #初始化tushare
+    tushare.set_token(tushare_token)
+    engine=sqlalchemy.create_engine(sqlenginestr)
+    return engine
+
+def get_stock_basic(engine = sqlenginestr,schema = databasename):
+    print('start to download stock_basic data') 
     pro = tushare.pro_api()
-    data = pro.stock_basic(fields='ts_code,symbol,name,area,industry,fullname,enname,cnspell,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
-    #保存到csv文件
-    data.to_csv(stock_list_file)
-
-    engine=sqlalchemy.create_engine('mysql+pymysql://root:root@127.0.0.1/test?charset=utf8mb4')
+    df = pro.stock_basic(fields='ts_code,symbol,name,area,industry,fullname,cnspell,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
     try:
-        pandas.io.sql.to_sql(frame=data, name='tb_stock_basic', con=engine, schema='test', if_exists='replace', index=True) 
+        pandas.io.sql.to_sql(frame=df, name='tb_stock_basic', con=engine, schema= schema, if_exists='replace', index=True) 
     except:
-        print('股票列表数据入库异常!')
+        print('To SQL Database Failed')
     finally:
         pass
+    print('download stock_basic data successed!')
+    return 1
 
-    
-    '''
-    #数据库参数
-    db_host = '127.0.0.1'
-    db_user = 'sa'
-    db_password = '!Yjt148218'
-    db_db = 'quantum'
-    db_charset = 'utf8'
-    db_url = 'mssql+pymssql://sa:pwd@127.0.0.1:1433/quantum'
-    
-    #入库    
-    engine = sqlalchemy.create_engine(db_url)
+def get_trade_cal(engine = sqlenginestr,schema = databasename):
+    print('start to download trade_cal data') 
+    date_now = datetime.datetime.now().strftime('%Y%m%d')
+    pro = tushare.pro_api()
+    df = pro.trade_cal(start_date='20200101', end_date=date_now, fields='exchange,cal_date,is_open')
     try:
-         #先一次性入库，异常后逐条入库
-        pandas.io.sql.to_sql(data, 'stock_basic', engine, schema='quantum.dbo', if_exists='append', index=False)
-    except :
-        #逐行入库
-        print('批量入库异常，开始逐条入库.')
-        for indexs in data.index :
-            line = data.iloc[indexs:indexs+1]
-            try:
-                pandas.io.sql.to_sql(line, 'stock_basic', engine, schema='quantum.dbo', if_exists='append', index=False, chunksize=1)
-            except:
-                print('股票列表数据入库异常：')
-                print(line)
-            finally:
-                pass
+        pandas.io.sql.to_sql(frame=df, name='tb_trade_cal', con=engine, schema= schema, if_exists='replace', index=True) 
+    except:
+        print('To SQL Database Failed')
     finally:
         pass
-    '''
-    
-
-
-    
-    print('完成下载股票列表数据')
+    print('download trade_cal data successed!')
     return 1
 
 
 #全量下载所有股票列表数据
 if __name__ == '__main__':
-   print('开始...')
-   
-   #初始化tushare
-   tushare.set_token(tushare_token)
-   print('获取股票列表')
-   get_stock_basic()
-   print('结束')
+    print('开始')
+    engine = initiate()
+    print('获取列表...')
+    #get_stock_basic(engine,databasename)
+    get_trade_cal(engine,databasename)
+    print('结束')
