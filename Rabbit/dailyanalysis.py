@@ -1,9 +1,16 @@
 import pandas as pd
 import requests
-import tushare as ts
 import os
 import time
 import warnings
+
+import sqlalchemy
+from sqlalchemy import exc
+import pymysql
+
+stock_list_file = 'd:/stock_list.csv'
+databasename = 'msstock'
+sqlenginestr='mysql+pymysql://root:root@127.0.0.1/'+databasename+'?charset=utf8mb4'
 
 warnings.filterwarnings('ignore')
 pd.set_option('expand_frame_repr', False)
