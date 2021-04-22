@@ -303,8 +303,8 @@ if __name__ == '__main__':
     #get_daily_top_list_data(engine,databasename,start_date,end_date)
     
     #updated after 3:00PM every day
-    #get_stock_basic(engine,databasename)
-    #get_daily_data(engine,databasename,start_date,end_date)
+    get_stock_basic(engine,databasename)
+    get_daily_data(engine,databasename,start_date,end_date)
     get_index_daily(engine,databasename,start_date,end_date)
     get_index_dailybasic(engine,databasename,start_date,end_date)
     
