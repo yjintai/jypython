@@ -285,7 +285,7 @@ if __name__ == '__main__':
     print('开始')
     engine = initiate()
     end_date = datetime.datetime.now().strftime('%Y%m%d')
-    start=datetime.datetime.now() -datetime.timedelta(days = 0)
+    start=datetime.datetime.now() -datetime.timedelta(days = 1)
     start_date = start.strftime('%Y%m%d')
     #start_date = '20100101'
     
