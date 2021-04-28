@@ -280,32 +280,88 @@ def get_index_dailybasic(engine = sqlenginestr,schema = databasename,start_date=
                 pass           
     return 1
 
+def get_ths_index(engine = sqlenginestr,schema = databasename):
+    print('start to download ths_index data') 
+    pro = ts.pro_api()
+    df = pro.ths_index()
+    try:
+        pd.io.sql.to_sql(frame=df, name='tb_ths_index', con=engine, schema= schema, if_exists='replace', index=True) 
+    except:
+        print('To SQL Database Failed')
+    finally:
+        pass
+    print('download ths_index data successed!')
+    return 1
+def get_ths_daily(engine = sqlenginestr,schema = databasename,start_date='20210412', end_date='20210412'):
+    print('start to download ths_daily data') 
+    pro = ts.pro_api()
+    fmt = '%Y%m%d'
+    begin=datetime.datetime.strptime(start_date,fmt)
+    end=datetime.datetime.strptime(end_date,fmt)
+    for i in range((end - begin).days+1):
+        date = begin + datetime.timedelta(days=i)
+        date_str = date.strftime('%Y%m%d')
+        for retry in range(3):
+            try:
+                df_daily = pro.ths_daily(trade_date=date_str)
+                if df_daily.empty:
+                    print ('Empty data in ' + date_str)
+                else:
+                    try:
+                        pd.io.sql.to_sql(frame=df_daily, name='tb_ths_daily', con=engine, schema= schema, if_exists='append', index=False) 
+                        print('download ' +date_str+ ' daily data successed!')
+                    except exc.IntegrityError:
+                            #Ignore duplicates
+                            print ("duplicated data " + date_str)
+                            pass
+                    except:
+                        print('To SQL Database Failed')
+                    finally:
+                        pass
+                break
+            except:
+                if retry < 2:
+                    print('failed. retry...')
+                else:
+                    print('failed.')
+            finally:
+                pass
+        
+        
+    return 1
 #全量下载所有股票列表数据
 if __name__ == '__main__':
     print('开始')
     engine = initiate()
     end_date = datetime.datetime.now().strftime('%Y%m%d')
-    start=datetime.datetime.now() -datetime.timedelta(days = 1)
+    start=datetime.datetime.now() -datetime.timedelta(days = 0)
     start_date = start.strftime('%Y%m%d')
     #start_date = '20100101'
     
     print('获取列表...')
  
     #May be updated weekly.
-    #get_hs_const(engine,databasename)
-    #get_trade_cal(engine,databasename,'20200101',end_date)
-    #get_concept(engine,databasename)
-    #get_index_basic(engine,databasename)
-
+    '''
+    get_hs_const(engine,databasename)
+    get_trade_cal(engine,databasename,'20200101',end_date)
+    get_concept(engine,databasename)
+    get_index_basic(engine,databasename)
+    get_ths_index(engine,databasename)
+    '''
     #updated after 24:00AM every day 
-    #get_moneyflow_hsgt(engine,databasename,'20200101',end_date)
-    #get_rzrq_margin(engine,databasename,'20200101',end_date)
-    #get_daily_top_list_data(engine,databasename,start_date,end_date)
+    '''
+    get_moneyflow_hsgt(engine,databasename,'20200101',end_date)
+    get_rzrq_margin(engine,databasename,'20200101',end_date)
+    get_daily_top_list_data(engine,databasename,start_date,end_date)
+    '''
     
-    #updated after 3:00PM every day
+    #updated after 5:00PM every day
+    
     get_stock_basic(engine,databasename)
     get_daily_data(engine,databasename,start_date,end_date)
     get_index_daily(engine,databasename,start_date,end_date)
     get_index_dailybasic(engine,databasename,start_date,end_date)
-    
+    get_ths_daily(engine,databasename,start_date,end_date)
+
+
     print('结束')

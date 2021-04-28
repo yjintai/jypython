@@ -50,6 +50,38 @@ def get_group_output(df, date, columns='industry', name='_limit_up'):
     output.rename(columns={'ts_code': 'count'}, inplace=True)
     return output
 
+def get_ths_daily_top(date):
+    engine = sqlalchemy.create_engine(sqlenginestr)
+    sql = '''SELECT tb_ths_index.name,tb_ths_daily.pct_change
+        FROM msstock.tb_ths_daily
+        join msstock.tb_ths_index on (tb_ths_daily.ts_code = tb_ths_index.ts_code) 
+        where tb_ths_index.exchange = 'A' and tb_ths_index.type = 'N' and tb_ths_daily.trade_date = '%s'
+        order by tb_ths_daily.pct_change desc limit 30;'''%date
+    df = pd.read_sql_query(sql, engine)
+    df.fillna(0, inplace=True)
+    df.replace('nan ', 0, inplace=True)
+    return df
+
+def ths_daily_analysis (date):
+    df_ths_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10','Top11','Top12','Top13','Top14','Top15','Top16','Top17','Top18','Top19','Top20'))
+    end=datetime.datetime.strptime(date,'%Y%m%d')
+    begin=end - datetime.timedelta(days = 30)
+    for i in range((end - begin).days+1):
+        date_i = begin + datetime.timedelta(days=i)
+        date_str = date_i.strftime('%Y%m%d')
+        df = get_ths_daily_top(date_str)
+        print(date_str)  
+        if not df.empty:
+            df_ths_days = df_ths_days.append({'Trade_Date':date_str}, ignore_index= True)   
+            df_ths_days = df_ths_days.append({'Trade_Date':date_str}, ignore_index= True) 
+            for j in range(20):
+                df_ths_days['Top%d' %(j+1)][df_ths_days.shape[0]-2] = df['name'][j]
+                df_ths_days['Top%d' %(j+1)][df_ths_days.shape[0]-1] = df['pct_change'][j]
+
+    return df_ths_days
+
+
+
 # 获取指定日期的分析统计结果
 def daily_analysis (date):
     date_now = date
@@ -151,6 +183,10 @@ def daily_analysis (date):
                 group_limit_up.to_csv(analysisfilename, index=True, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
                 save_to_sql(group_limit_up,engine,databasename,'tb_daily_group_by_%s_limit_up' %group,True)
 
+        myprint('THS Group:',analysisfilename)
+        df_ths_daily=ths_daily_analysis(date_now)
+        df_ths_daily.to_csv(analysisfilename, index=False, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
+
 if __name__ == '__main__':
     print('start...')
     print('analyze daily data')
@@ -160,7 +196,7 @@ if __name__ == '__main__':
     #start=datetime.datetime.strptime(start_date,fmt)
     #end=datetime.datetime.strptime(end_date,fmt)
     end = datetime.datetime.now()
-    start=datetime.datetime.now() -datetime.timedelta(days = 1)
+    start=datetime.datetime.now() -datetime.timedelta(days = 0)
 
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)

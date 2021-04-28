@@ -36,73 +36,67 @@ def save_to_sql(dataframe,engine,databasename,tablename,index=False):
         pass
     return 1
 
-def get_group_output(df, date, columns='industry', name='_limit_up'):
-    df = df.copy()
-    output = pd.DataFrame()
-    output = pd.DataFrame(df.groupby(columns)['ts_code'].count())
-    output['pe_mean'] = df.groupby(columns)['pe'].mean()
-    output['pe_median'] = df.groupby(columns)['pe'].median()
-    output['pb_mean'] = df.groupby(columns)['pb'].mean()
-    output['pb_median'] = df.groupby(columns)['pb'].median()
-    output['trade_date'] = date
-    output.sort_values('ts_code', ascending=False, inplace=True)
-    output.rename(columns={'ts_code': 'count'}, inplace=True)
-    return output
-
 # 获取指定日期的分析统计结果
-def jiaolongchulai (date):
-    date_now = date
-    analysisfilename = basedir+'/dailyanalysis/'+ str(date_now) + '_jiaolongchulai.csv'
+def jiaolongchuhai (date_str):
+
+    #analysisfilename = basedir+'/dailyanalysis/'+ str(date_now) + '_jiaolongchulai.csv'
     engine = sqlalchemy.create_engine(sqlenginestr)
-    
+    fmt = '%Y%m%d'
+    date=datetime.datetime.strptime(date_str,fmt)
+    date_list=date -datetime.timedelta(days = 5)
+    date_list_str = date_list.strftime(fmt)
+
     # 读取limit up ts_code
-    sql = '''SELECT * FROM msstock.tb_daily_limit_up where trade_date = '%s';''' %date_now
+    sql = '''SELECT * FROM msstock.tb_daily_limit_up where trade_date = '%s' and list_date < '%s';''' %(date_str,date_list_str)
     df = pd.read_sql_query(sql, engine)
     df.fillna(0, inplace=True)
     df.replace('nan ', 0, inplace=True)
+    df_output = pd.DataFrame()
+    for index, row in df.iterrows():
+        sql1='''SELECT * FROM msstock.tb_daily_data where ts_code = '%s' and trade_date < '%s' order by trade_date desc limit 10;''' %(row['ts_code'],date_str)
+        df1 = pd.read_sql_query(sql1, engine)
+        df1.fillna(0, inplace=True)
+        df1.replace('nan ', 0, inplace=True)
+        if (row['low'] >  df1['high'][0])  & (row['amount'] < df1['amount'][0]):
+            df_output = df_output.append(df.loc[[index]])
+    #print (df_output)
+    return df_output
 
-    for tscode in df['ts_code']:
-        
-        df_up = df[df['pct_chg'] > 0.00]
-        df_down = df[df['pct_chg'] < 0.00]
-        df_limit_up = df[(((df['market']=='创业板') | (df['market']=='科创板')) & (df['pct_chg'] >= 19.7) & (df['pct_chg'] < 20.1)) | (((df['market']!='创业板') & (df['market']!='科创板')) & (df['pct_chg'] >= 9.7) & (df['pct_chg'] < 10.1))]
-        df_limit_up_new = df_limit_up[pd.to_datetime(date_now) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(365)]
-
-
-        myprint('General Data:',analysisfilename)
-        if df_output_general['amount'].sum() == 0:
-            print ('Empty data in ' + date_now)
-        else:
-            df_output_general.to_csv(analysisfilename, index=False, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
-            save_to_sql(df_output_general,engine,databasename,'tb_daily_general_data')
-        
-        myprint('Limit up:',analysisfilename)
-        if df_limit_up.empty:
-            print ('Empty data in ' + date_now)
-        else:
-            df_limit_up.to_csv(analysisfilename, index=False, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
-            save_to_sql(df_limit_up,engine,databasename,'tb_daily_limit_up')
-
-            myprint('Limit up Group:',analysisfilename)
-            for group in ['industry']:
-                group_limit_up = get_group_output(df_limit_up, date_now, columns=group, name='limit_up')
-                group_limit_up.to_csv(analysisfilename, index=True, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
-                save_to_sql(group_limit_up,engine,databasename,'tb_daily_group_by_%s_limit_up' %group,True)
+def meas_jiaolongchuhai (data):
+    if data.shape[0] == 0:
+        print ('Empty Data!')
+        return
+    engine = sqlalchemy.create_engine(sqlenginestr)
+    df_output = pd.DataFrame(columns=('ts_code','name','trade_date','pct_chg_date_1', 'pct_chg_date_2', 'pct_chg_date_3', 'pct_chg_date_4', 'pct_chg_date_5'))
+    i =0
+    for index, row in data.iterrows():
+        sql1='''SELECT * FROM msstock.tb_daily_data where ts_code = '%s' and trade_date > '%s' order by trade_date limit 5;''' %(row['ts_code'],row['trade_date'])
+        df1 = pd.read_sql_query(sql1,engine)
+        df1.fillna(0, inplace=True)
+        df1.replace('nan ', 0, inplace=True)
+        df_output = df_output.append({'ts_code':row['ts_code'],'name':row['name'],'trade_date':row['trade_date']}, ignore_index= True)   
+        for j in range(df1.shape[0]):
+            df_output['pct_chg_date_%d' %(j+1)][i] = df1['pct_chg'][j]
+        i +=1
+    print (df_output)
 
 if __name__ == '__main__':
     print('start...')
     print('analyze daily data')
+    '''
     fmt = '%Y%m%d'
-    #start_date = '20210422'
-    #end_date = '20210422'
-    #start=datetime.datetime.strptime(start_date,fmt)
-    #end=datetime.datetime.strptime(end_date,fmt)
+    start_date = '20210422'
+    end_date = '20210425'
+    start=datetime.datetime.strptime(start_date,fmt)
+    end=datetime.datetime.strptime(end_date,fmt)
+    '''
     end = datetime.datetime.now()
-    start=datetime.datetime.now() -datetime.timedelta(days = 1)
-
+    start=end -datetime.timedelta(days = 4)
+    
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
         print(date_str)  
-        daily_analysis(date_str)
+        data=jiaolongchuhai(date_str)
+        meas_jiaolongchuhai(data)
     print('end')
