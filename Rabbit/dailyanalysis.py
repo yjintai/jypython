@@ -196,7 +196,7 @@ if __name__ == '__main__':
     #start=datetime.datetime.strptime(start_date,fmt)
     #end=datetime.datetime.strptime(end_date,fmt)
     end = datetime.datetime.now()
-    start=datetime.datetime.now() -datetime.timedelta(days = 0)
+    start=datetime.datetime.now() -datetime.timedelta(days = 6)
 
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)

@@ -1,9 +1,7 @@
 import time
 import datetime
 import pandas as pd
-import requests
-import os
-import warnings
+import logging
 
 import sqlalchemy
 from sqlalchemy import exc
@@ -13,28 +11,6 @@ databasename = 'msstock'
 sqlenginestr='mysql+pymysql://root:root@127.0.0.1/'+databasename+'?charset=utf8mb4'
 
 pd.set_option('expand_frame_repr', False)
-basedir = 'D:/Works/python/jypython/rabbit'
-
-def initiate():
-    engine=sqlalchemy.create_engine(sqlenginestr)
-    return engine
-
-def myprint (str,filename, mode = 'a'):
-    print (str)
-
-def save_to_sql(dataframe,engine,databasename,tablename,index=False):
-    try:
-        pd.io.sql.to_sql(frame=dataframe, name=tablename, con=engine, schema= databasename, if_exists='append', index=index) 
-        print('save to sql table %s successed!' %tablename)
-    except exc.IntegrityError:
-        #Ignore duplicates
-        print ("duplicated data in " + tablename)
-        pass
-    except:
-        print('To SQL Database Failed')
-    finally:
-        pass
-    return 1
 
 # 获取指定日期的分析统计结果
 def jiaolongchuhai (date_str):
@@ -78,10 +54,11 @@ def meas_jiaolongchuhai (data):
         for j in range(df1.shape[0]):
             df_output['pct_chg_date_%d' %(j+1)][i] = df1['pct_chg'][j]
         i +=1
-    print (df_output)
+    print(df_output)
+    logging.debug (df_output)
 
 if __name__ == '__main__':
-    print('start...')
+    logging.debug('start...')
     print('analyze daily data')
     '''
     fmt = '%Y%m%d'
@@ -91,7 +68,7 @@ if __name__ == '__main__':
     end=datetime.datetime.strptime(end_date,fmt)
     '''
     end = datetime.datetime.now()
-    start=end -datetime.timedelta(days = 4)
+    start=end -datetime.timedelta(days = 2)
     
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
