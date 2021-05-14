@@ -334,7 +334,7 @@ if __name__ == '__main__':
     print('开始')
     engine = initiate()
     end_date = datetime.datetime.now().strftime('%Y%m%d')
-    start=datetime.datetime.now() -datetime.timedelta(days = 6)
+    start=datetime.datetime.now() -datetime.timedelta(days = 5)
     start_date = start.strftime('%Y%m%d')
     #start_date = '20100101'
     
@@ -342,6 +342,7 @@ if __name__ == '__main__':
  
     #May be updated weekly.
     '''
+    get_trade_cal(engine,databasename,'20170101',end_date)
     get_hs_const(engine,databasename)
     get_trade_cal(engine,databasename,'20200101',end_date)
     get_concept(engine,databasename)
@@ -356,12 +357,14 @@ if __name__ == '__main__':
     '''
     
     #updated after 5:00PM every day
-    
+    '''
     get_stock_basic(engine,databasename)
     get_daily_data(engine,databasename,start_date,end_date)
     get_index_daily(engine,databasename,start_date,end_date)
     get_index_dailybasic(engine,databasename,start_date,end_date)
     get_ths_daily(engine,databasename,start_date,end_date)
+    '''
+    #get_daily_data(engine,databasename,'20210507','20210507')
 
 
     print('结束')
