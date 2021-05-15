@@ -25,6 +25,7 @@ def initiate():
     engine=sqlalchemy.create_engine(sqlenginestr)
     return engine
 
+#Get stock basic info for each code.
 def get_stock_basic(engine = sqlenginestr,schema = databasename):
     print('start to download stock_basic data') 
     pro = ts.pro_api()
@@ -53,6 +54,7 @@ def get_hs_const(engine = sqlenginestr,schema = databasename):
     print('download hs_const data successed!')
     return 1
 
+# Get trade calendar
 def get_trade_cal(engine = sqlenginestr,schema = databasename,start_date='20200101', end_date='20210412'):
     print('start to download trade_cal data') 
     pro = ts.pro_api()
@@ -65,7 +67,7 @@ def get_trade_cal(engine = sqlenginestr,schema = databasename,start_date='202001
         pass
     print('download trade_cal data successed!')
     return 1
-
+# Get stock daily data for all code.
 def get_daily_data(engine = sqlenginestr,schema = databasename,start_date='20210412', end_date='20210412'):
     print('start to download daily data') 
     pro = ts.pro_api()
@@ -106,10 +108,9 @@ def get_daily_data(engine = sqlenginestr,schema = databasename,start_date='20210
                     print('failed.')
             finally:
                 pass
-        
-        
     return 1
 
+# Get Hu Sheng Gu Tong money flow every day
 def get_moneyflow_hsgt(engine = sqlenginestr,schema = databasename,start_date='20210101', end_date='20210412'):
     print('start to download moneyflow_hsgt data') 
     pro = ts.pro_api()
@@ -123,6 +124,7 @@ def get_moneyflow_hsgt(engine = sqlenginestr,schema = databasename,start_date='2
     print('download moneyflow_hsgt data successed!')
     return 1
 
+# Get Rong Zi Rong Quan margin every day
 def get_rzrq_margin(engine = sqlenginestr,schema = databasename,start_date='20210101', end_date='20210412'):
     print('start to download rzrq_margin data') 
     pro = ts.pro_api()
@@ -136,6 +138,7 @@ def get_rzrq_margin(engine = sqlenginestr,schema = databasename,start_date='2021
     print('download rzrq_margin data successed!')
     return 1
 
+# Get 龙虎榜机构成交明细
 def get_daily_top_list_data(engine = sqlenginestr,schema = databasename,start_date='20210412', end_date='20210412'):
     print('start to download daily_top_list_data data') 
     pro = ts.pro_api()
@@ -164,7 +167,7 @@ def get_daily_top_list_data(engine = sqlenginestr,schema = databasename,start_da
             finally:
                 pass
     return 1
-
+# Get 概念股分类
 def get_concept(engine = sqlenginestr,schema = databasename):
     print('start to download concept data') 
     pro = ts.pro_api()
@@ -200,7 +203,7 @@ def get_concept(engine = sqlenginestr,schema = databasename):
                 pass
     print('download concept data detail successed!')
     return 1
-
+# 获取指数基本信息
 def get_index_basic(engine = sqlenginestr,schema = databasename):
     print('start to download index_basic data') 
     pro = ts.pro_api()
@@ -213,7 +216,7 @@ def get_index_basic(engine = sqlenginestr,schema = databasename):
         pass
     print('download index_basic data successed!')
     return 1
-
+#获取指数每日行情
 def get_index_daily(engine = sqlenginestr,schema = databasename,start_date='20210412', end_date='20210412'):
     print('start to download index_daily')  
     ls = ['000001.SH','000005.SH','000300.SH','000905.SH','399001.SZ','399006.SZ']
@@ -247,6 +250,7 @@ def get_index_daily(engine = sqlenginestr,schema = databasename,start_date='2021
             finally:
                 pass           
     return 1
+#获取指数每日指标数据，包括总市值，换手率，市盈率等
 def get_index_dailybasic(engine = sqlenginestr,schema = databasename,start_date='20210412', end_date='20210412'):
     print('start to download index_dailybasic')  
     ls = ['000001.SH','000005.SH','000300.SH','000905.SH','399001.SZ','399006.SZ']
@@ -279,7 +283,7 @@ def get_index_dailybasic(engine = sqlenginestr,schema = databasename,start_date=
             finally:
                 pass           
     return 1
-
+#获取同花顺板块指数参数
 def get_ths_index(engine = sqlenginestr,schema = databasename):
     print('start to download ths_index data') 
     pro = ts.pro_api()
@@ -292,6 +296,7 @@ def get_ths_index(engine = sqlenginestr,schema = databasename):
         pass
     print('download ths_index data successed!')
     return 1
+#获取同花顺板块每日指标数据
 def get_ths_daily(engine = sqlenginestr,schema = databasename,start_date='20210412', end_date='20210412'):
     print('start to download ths_daily data') 
     pro = ts.pro_api()
@@ -336,7 +341,8 @@ if __name__ == '__main__':
     end_date = datetime.datetime.now().strftime('%Y%m%d')
     start=datetime.datetime.now() -datetime.timedelta(days = 5)
     start_date = start.strftime('%Y%m%d')
-    #start_date = '20100101'
+    start_date = '20150515'
+    end_date = '20150630'
     
     print('获取列表...')
  
@@ -357,14 +363,14 @@ if __name__ == '__main__':
     '''
     
     #updated after 5:00PM every day
-    '''
-    get_stock_basic(engine,databasename)
-    get_daily_data(engine,databasename,start_date,end_date)
-    get_index_daily(engine,databasename,start_date,end_date)
-    get_index_dailybasic(engine,databasename,start_date,end_date)
-    get_ths_daily(engine,databasename,start_date,end_date)
-    '''
-    #get_daily_data(engine,databasename,'20210507','20210507')
+    
+    #get_stock_basic(engine,databasename)
+    #get_daily_data(engine,databasename,start_date,end_date)
+    #get_index_daily(engine,databasename,start_date,end_date)
+    #get_index_dailybasic(engine,databasename,start_date,end_date)
+    #get_ths_daily(engine,databasename,start_date,end_date)
+    
+    get_daily_data(engine,databasename,'20150501','20150630')
 
 
     print('结束')
