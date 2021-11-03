@@ -26,5 +26,5 @@ def get_today_all_ts(date):
 if __name__ == '__main__':
     print('start...')
     print('get daily data')
-    get_today_all_ts(date='20210414')
+    get_today_all_ts(date='20210909')
     print('end')
