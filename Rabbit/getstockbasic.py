@@ -15,6 +15,7 @@ import sqlalchemy
 import pymysql
 
 
+
 #需修改的参数
 stock_list_file = 'd:/stock_list.csv'
 sqlenginestr='mysql+pymysql://root:root@127.0.0.1/msstock?charset=utf8mb4'
