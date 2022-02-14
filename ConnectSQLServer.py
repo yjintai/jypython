@@ -86,6 +86,7 @@ def getBFTdata(msg,FSNs):
 
 def getRFTdata(msg,FSNs):
     for FSN in FSNs:
+        
         #For RFT:
         sql = '''SELECT [TBL_GENERAL_DATA].[DB_Date_Time_Inserted]
             ,[TBL_GENERAL_DATA].[G_Station_Type]
