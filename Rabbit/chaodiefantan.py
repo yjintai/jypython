@@ -82,7 +82,6 @@ def measuremnet (data):
     logging.debug (df_output)
 
 
-
 if __name__ == '__main__':
     logging.debug('start...')
     print('analyze daily data')
