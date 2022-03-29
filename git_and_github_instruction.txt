@@ -17,6 +17,20 @@ git reset --hard HEAD~2 //回退2个版本
 git reset --hard HEAD^^  //回退2个版本 
 git reset --hard commit_id
 
+SSH 生成和认证：
+
+1）、重新生成ssh
+ssh-keygen -t rsa -C “jet.yan@RSZ-EL-000079”
+存在路径下：~/.ssh
+
+2）、查看你的 public key
+cat ~/.ssh/id_rsa.pub
+（以ssh-rsa 开头，以账号的注册邮箱结尾的）
+3）、将它添加到码云，添加地址
+https://gitee.com/profile/sshkeys
+4）、终端输入 ssh -T git@gitee.com
+5）、完成啦~
+
 远程管理：
 REM sync the git local Repository to github Repository "jypython"
 git remote add origin git@github.com:yjintai/jypython.git //SSH with security
