@@ -334,53 +334,44 @@ def get_ths_daily(engine = sqlenginestr,schema = databasename,start_date='202104
         
         
     return 1
-#全量下载所有股票列表数据
-if __name__ == '__main__':
-    print('开始')
+def process_weekly(start_date,end_date):
     engine = initiate()
-    end_date = datetime.datetime.now().strftime('%Y%m%d')
-    start=datetime.datetime.now() -datetime.timedelta(days = 2)
-    start_date = start.strftime('%Y%m%d')
-    start_date = '20150515'
-    end_date = '20150630'
-    
-    print('获取列表...')
- 
     #May be updated weekly.
     '''
     get_trade_cal(engine,databasename,'20170101',end_date)
+    
     get_hs_const(engine,databasename)
     get_trade_cal(engine,databasename,'20200101',end_date)
-    get_concept(engine,databasename)
+    #get_concept(engine,databasename)
     get_index_basic(engine,databasename)
     get_ths_index(engine,databasename)
     '''
+def process_daily(start_date,end_date):
+    engine = initiate()
     #updated after 24:00AM every day 
-    '''
+ 
     get_moneyflow_hsgt(engine,databasename,'20200101',end_date)
     get_rzrq_margin(engine,databasename,'20200101',end_date)
     get_daily_top_list_data(engine,databasename,start_date,end_date)
-    '''
     
     #updated after 5:00PM every day
-    
-<<<<<<< HEAD
     get_stock_basic(engine,databasename)
     get_daily_data(engine,databasename,start_date,end_date)
     get_index_daily(engine,databasename,start_date,end_date)
     get_index_dailybasic(engine,databasename,start_date,end_date)
     get_ths_daily(engine,databasename,start_date,end_date)
     
-    #get_daily_data(engine,databasename,'20210507','20210507')
-=======
-    #get_stock_basic(engine,databasename)
-    #get_daily_data(engine,databasename,start_date,end_date)
-    #get_index_daily(engine,databasename,start_date,end_date)
-    #get_index_dailybasic(engine,databasename,start_date,end_date)
-    #get_ths_daily(engine,databasename,start_date,end_date)
+
+if __name__ == '__main__':
+    print('开始')
+    end_date = datetime.datetime.now().strftime('%Y%m%d')
+    start=datetime.datetime.now() -datetime.timedelta(days = 2)
+    start_date = start.strftime('%Y%m%d')
+    #start_date = '20150515'
+    #end_date = '20150630'
     
-    get_daily_data(engine,databasename,'20150501','20150630')
->>>>>>> 8b5c71b77bae0162f2be3b344382bc8fc770c1a0
-
-
+    print('获取列表...')
+    process_weekly(start_date,end_date)
+    process_daily(start_date,end_date)
+    
     print('结束')

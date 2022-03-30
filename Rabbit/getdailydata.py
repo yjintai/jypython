@@ -3,7 +3,7 @@ import pandas as pd
 import time
 import os
 
-inputdatadir = 'D:/Works/python/test/input_data'
+inputdatadir = 'D:/Works/python/report/input_data'
 pd.set_option('expand_frame_repr', False)
 
 # 从tushare获取指定日期的数据
@@ -26,5 +26,5 @@ def get_today_all_ts(date):
 if __name__ == '__main__':
     print('start...')
     print('get daily data')
-    get_today_all_ts(date='20210909')
+    get_today_all_ts(date='20220327')
     print('end')

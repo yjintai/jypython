@@ -63,6 +63,6 @@ if __name__ == '__main__':
     print('开始')
     engine = initiate()
     print('获取列表...')
-    #get_stock_basic(engine,databasename)
+    get_stock_basic(engine,databasename)
     get_trade_cal(engine,databasename)
     print('结束')

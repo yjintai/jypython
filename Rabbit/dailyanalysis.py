@@ -1,3 +1,4 @@
+from pickle import FALSE, TRUE
 import time
 import datetime
 import pandas as pd
@@ -14,14 +15,48 @@ sqlenginestr='mysql+pymysql://root:root@127.0.0.1/'+databasename+'?charset=utf8m
 
 warnings.filterwarnings('ignore')
 pd.set_option('expand_frame_repr', False)
-basedir = 'D:/Works/python/jypython/rabbit'
+basedir = 'D:/Works/python/report/dailyanalysis/'
 
 def initiate():
     engine=sqlalchemy.create_engine(sqlenginestr)
     return engine
 
-def myprint (str,filename, mode = 'a'):
+def myprint (str):
     print (str)
+
+def savetoreport (date_now,df,tablename,mode = 'w',end = FALSE):
+    filename = basedir+ str(date_now) + '_report'
+    #csvfilename = filename+'.csv'
+    #df.to_csv(csvfilename, index=False, encoding='utf_8_sig',mode = mode, float_format = '%.2f')
+    htmlfilename = filename+'.html'
+    html_start = ""
+    html_end = ""
+    if mode == 'w':
+        html_start = '''
+        <html>
+        <head><title></title></head>
+        <body>
+        <DIV align="center">
+        <TABLE CELLSPACING="0" CELLPADDING="0" LANG="en-US" style="">
+        <TR><TD>
+        <font size="6" color = "BLUE">%s Report</font>
+        </TD></TR>
+        </TABLE>
+        </DIV>
+        <HR/><TABLE border="0"><TR><TD><font size="4" color = "BLUE">%s</font></TD></TR></TABLE>
+        '''%(date_now,tablename)
+    else:
+        html_start = '''
+        <HR/><TABLE border="0"><TR><TD><font size="4" color = "BLUE">%s</font></TD></TR></TABLE>
+        '''%tablename
+    if end == TRUE:
+        html_end = '''
+        </body></html>'''
+    html_string = html_start + df.to_html(border = '0') + html_end
+    with open(htmlfilename, mode = mode) as f:
+        f.write(html_string)
+    return TRUE
+
 
 def save_to_sql(dataframe,engine,databasename,tablename,index=False):
     try:
@@ -85,7 +120,7 @@ def ths_daily_analysis (date):
 # 获取指定日期的分析统计结果
 def daily_analysis (date):
     date_now = date
-    analysisfilename = basedir+'/dailyanalysis/'+ str(date_now) + '_report.csv'
+    analysisfilename = basedir+ str(date_now) + '_report'
     engine = sqlalchemy.create_engine(sqlenginestr)
     
     # 读取指数信息
@@ -100,11 +135,11 @@ def daily_analysis (date):
     df_index = pd.read_sql_query(sql, engine)
     df_index.fillna(0, inplace=True)
     df_index.replace('nan ', 0, inplace=True)
-    myprint('Index Data：',analysisfilename)
+    myprint('Index Data：')
     if df_index.empty:
         print ('Empty data in ' + date_now)
     else:
-        df_index.to_csv(analysisfilename, index=False, encoding='utf_8_sig',mode = 'w', float_format = '%.2f')
+        savetoreport (date_now,df_index,"指数信息",mode = 'w')
         # 读取TDX的每日数据
         sql = '''SELECT tb_daily_data.ts_code,
                 tb_daily_data.trade_date,
@@ -163,29 +198,29 @@ def daily_analysis (date):
         df_output_general.loc[4] = ['科创板',date_now,df_up_kechuang.shape[0],df_down_kechuang.shape[0],df_kechuang['amount'].sum(),df_limit_up_kechuang.shape[0],df_limit_up_new_kechuang.shape[0]]
         df_output_general[['up', 'down', 'amount', 'limit up', 'new limit up']] = df_output_general[['up', 'down', 'amount', 'limit up', 'new limit up']].astype(int)
             
-        myprint('General Data:',analysisfilename)
+        myprint('General Data:')
         if df_output_general['amount'].sum() == 0:
             print ('Empty data in ' + date_now)
         else:
-            df_output_general.to_csv(analysisfilename, index=False, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
+            savetoreport (date_now,df_output_general,"每日涨跌基本数据",mode = 'a')
             save_to_sql(df_output_general,engine,databasename,'tb_daily_general_data')
         
-        myprint('Limit up:',analysisfilename)
+        myprint('Limit up:')
         if df_limit_up.empty:
             print ('Empty data in ' + date_now)
         else:
-            df_limit_up.to_csv(analysisfilename, index=False, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
+            savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a')
             save_to_sql(df_limit_up,engine,databasename,'tb_daily_limit_up')
 
-            myprint('Limit up Group:',analysisfilename)
+            myprint('Limit up Group:')
             for group in ['industry']:
                 group_limit_up = get_group_output(df_limit_up, date_now, columns=group, name='limit_up')
-                group_limit_up.to_csv(analysisfilename, index=True, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
+                savetoreport (date_now,group_limit_up,"涨停板块统计",mode = 'a')
                 save_to_sql(group_limit_up,engine,databasename,'tb_daily_group_by_%s_limit_up' %group,True)
 
-        myprint('THS Group:',analysisfilename)
+        myprint('THS Group:')
         df_ths_daily=ths_daily_analysis(date_now)
-        df_ths_daily.to_csv(analysisfilename, index=False, encoding='utf_8_sig',mode = 'a', float_format = '%.2f')
+        savetoreport (date_now,df_ths_daily,"同花顺板块热度",mode = 'a', end = TRUE)
 
 if __name__ == '__main__':
     print('start...')
@@ -195,7 +230,7 @@ if __name__ == '__main__':
     #end_date = '20210422'
     #start=datetime.datetime.strptime(start_date,fmt)
     #end=datetime.datetime.strptime(end_date,fmt)
-    end = datetime.datetime.now()
+    end = datetime.datetime.now() -datetime.timedelta(days = 1)
     start=datetime.datetime.now() -datetime.timedelta(days = 2)
 
     for i in range((end - start).days+1):
