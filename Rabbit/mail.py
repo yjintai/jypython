@@ -23,21 +23,25 @@ def get_content_from_file(filename):
         print("Read file failed.")
     return content
 def send_mail(subject,content):
-    me=mail_user+"<"+mail_user+">"
-    msg = MIMEText(content)
-    msg['Subject'] = subject
-    msg['From'] = me
-    msg['To'] = ";".join(to_list)
-    try:
-        s = smtplib.SMTP()
-        s.connect(mail_server)
-        s.login(mail_user,mail_passwd)
-        s.sendmail(me, to_list, msg.as_string())
-        s.close()
-        return True
-    except Exception as e:
-        print ("Error:",e)
+    if content == "":
+        print("No report file today.")
         return False
+    else:
+        me=mail_user+"<"+mail_user+">"
+        msg = MIMEText(content)
+        msg['Subject'] = subject
+        msg['From'] = me
+        msg['To'] = ";".join(to_list)
+        try:
+            s = smtplib.SMTP()
+            s.connect(mail_server)
+            s.login(mail_user,mail_passwd)
+            s.sendmail(me, to_list, msg.as_string())
+            s.close()
+            return True
+        except Exception as e:
+            print ("Error:",e)
+            return False
 def get_report_filename(date):
     filename = basedir+date+'_report.html'
     return filename

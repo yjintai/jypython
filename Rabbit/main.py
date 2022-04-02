@@ -32,8 +32,8 @@ if __name__ == '__main__':
     #end_date = '20150630'
     
     print('获取列表...')
-    gdts.process_weekly(start_date,end_date)
     gdts.process_daily(start_date,end_date)
+    gdts.process_weekly(start_date,end_date)
     print('处理数据...')
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
