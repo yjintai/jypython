@@ -83,15 +83,12 @@ def get_daily_data(engine = sqlenginestr,schema = databasename,date_str='2021041
                 return False
             else:
                 ret=save_to_sql(frame=df_all, name='tb_daily_data', con=engine, schema= schema, if_exists='append', index=False) 
-                if ret == False:
-                    return False
             break
         except:
             if retry < 2:
                 print('failed. retry...')
             else:
                 print('failed.')
-                return False
         finally:
             pass
     return True
@@ -117,7 +114,7 @@ def get_daily_top_list_data(engine = sqlenginestr,schema = databasename,date_str
     print('start to download daily_top_list_data data') 
     pro = ts.pro_api()
     df_top_list = pro.top_list(trade_date=date_str)  
-    df_top_inst = pro.top_inst(trade_date=date_str)        
+    df_top_inst = pro.top_inst(trade_date=date_str)   
     if df_top_list.empty:
         print ('Empty data in ' + date_str)
     else:
@@ -331,13 +328,13 @@ def process_weekly(start_date,end_date):
         date = begin + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
         print(date_str)
-        '''
+        
         get_hs_const(engine,databasename)
         get_trade_cal(engine,databasename,'20200101',date_str)
         #get_concept(engine,databasename)
         get_index_basic(engine,databasename)
         get_ths_index(engine,databasename)
-    '''
+    
 def process_daily(start_date,end_date):
     engine = initiate()
     print('start process daily data') 
@@ -367,13 +364,13 @@ def process_daily(start_date,end_date):
 
 if __name__ == '__main__':
     print('开始')
-    end = datetime.datetime.now() -datetime.timedelta(days = 23)
-    start=datetime.datetime.now() -datetime.timedelta(days = 23)
+    end = datetime.datetime.now() -datetime.timedelta(days = 0)
+    start=datetime.datetime.now() -datetime.timedelta(days = 0)
     end_date = end.strftime('%Y%m%d')
     start_date = start.strftime('%Y%m%d')
-    #start_date = '20220315'
-    #end_date = '20220315'
+    start_date = '20220406'
+    end_date = '20220406'
     
     process_daily(start_date,end_date)
-    process_weekly(start_date,end_date)
+    #process_weekly(start_date,end_date)
     print('结束')

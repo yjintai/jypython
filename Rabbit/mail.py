@@ -7,7 +7,7 @@ import smtplib
 basedir = 'D:/Works/python/report/dailyanalysis/'
 
 #发件人列表
-to_list=["228442236@qq.com"]
+to_list=["228442236@qq.com","yjintai@126.com"]
 mail_server="smtp.126.com" # 126的邮件服务器
 mail_user="yjintai@126.com" #必须是真实存在的用户
 mail_passwd="STBLWUMPTXXVWQWP" #
@@ -28,7 +28,7 @@ def send_mail(subject,content):
         return False
     else:
         me=mail_user+"<"+mail_user+">"
-        msg = MIMEText(content)
+        msg = MIMEText(content,'html','utf-8')
         msg['Subject'] = subject
         msg['From'] = me
         msg['To'] = ";".join(to_list)
@@ -46,7 +46,7 @@ def get_report_filename(date):
     filename = basedir+date+'_report.html'
     return filename
 if __name__ == '__main__':
-    filename = basedir+ '20220328_report.html'
+    filename = basedir+ '20220401_report.html'
     content = get_content_from_file(filename)
     if send_mail("Daily Report",content):
         print ("发送成功")

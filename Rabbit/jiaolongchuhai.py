@@ -23,19 +23,35 @@ def jiaolongchuhai (date_str):
     date_list_str = date_list.strftime(fmt)
 
     # 读取limit up ts_code
-    sql = '''SELECT * FROM msstock.tb_daily_limit_up where trade_date = '%s' and list_date < '%s';''' %(date_str,date_list_str)
+    sql='''select tb_daily_limit_up.ts_code,
+    tb_daily_limit_up.low,
+    tb_daily_limit_up.amount,    
+    tb_daily_limit_up.name as 名称,
+    tb_daily_limit_up.industry as 板块,
+    round(tb_daily_limit_up.close,2) as 收盘,
+    concat(round(tb_daily_limit_up.pct_chg,2),'%s') as 涨跌幅,
+    concat(round(tb_daily_limit_up.turnover_rate,2),'%s') as 换手率,
+    round(tb_daily_limit_up.pe,2) as 市盈率,
+    round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
+    from msstock.tb_daily_limit_up 
+    left join msstock.tb_daily_data
+    on (tb_daily_limit_up.ts_code = tb_daily_data.ts_code and tb_daily_limit_up.trade_date = tb_daily_data.trade_date)
+    where tb_daily_limit_up.trade_date = '%s' and tb_daily_limit_up.list_date < '%s';''' %('%%','%%',date_str,date_list_str)
+
     df = pd.read_sql_query(sql, engine)
     df.fillna(0, inplace=True)
     df.replace('nan ', 0, inplace=True)
     df_output = pd.DataFrame()
     for index, row in df.iterrows():
-        sql1='''SELECT * FROM msstock.tb_daily_data where ts_code = '%s' and trade_date < '%s' order by trade_date desc limit 10;''' %(row['ts_code'],date_str)
+        sql1='''SELECT * FROM msstock.tb_daily_data
+        where ts_code = '%s' and trade_date < '%s' 
+        order by trade_date desc limit 10;''' %(row['ts_code'],date_str)
         df1 = pd.read_sql_query(sql1, engine)
         df1.fillna(0, inplace=True)
         df1.replace('nan ', 0, inplace=True)
         if (row['low'] >  df1['high'][0])  & (row['amount'] < df1['amount'][0]):
             df_output = df_output.append(df.loc[[index]])
-    #print (df_output)
+    print (df_output)
     return df_output
 
 def meas_jiaolongchuhai (data):
@@ -67,13 +83,14 @@ if __name__ == '__main__':
     start=datetime.datetime.strptime(start_date,fmt)
     end=datetime.datetime.strptime(end_date,fmt)
     '''
-    end = datetime.datetime.now()
-    start=end -datetime.timedelta(days = 2)
+    end = datetime.datetime.now() -datetime.timedelta(days = 5)
+    start=datetime.datetime.now() -datetime.timedelta(days = 5)
     
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
+        date_str = '20220406'
         print(date_str)  
         data=jiaolongchuhai(date_str)
-        meas_jiaolongchuhai(data)
+        #meas_jiaolongchuhai(data)
     print('end')

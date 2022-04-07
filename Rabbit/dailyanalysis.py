@@ -9,6 +9,7 @@ import warnings
 import sqlalchemy
 from sqlalchemy import exc
 import pymysql
+import jiaolongchuhai as jlch
 
 databasename = 'msstock'
 sqlenginestr='mysql+pymysql://root:root@127.0.0.1/'+databasename+'?charset=utf8mb4'
@@ -24,7 +25,7 @@ def initiate():
 def myprint (str):
     print (str)
 
-def savetoreport (date_now,df,tablename,mode = 'w',end = FALSE):
+def savetoreport (date_now,df,tablename,mode = 'w',end = False):
     filename = basedir+ str(date_now) + '_report'
     #csvfilename = filename+'.csv'
     #df.to_csv(csvfilename, index=False, encoding='utf_8_sig',mode = mode, float_format = '%.2f')
@@ -35,26 +36,40 @@ def savetoreport (date_now,df,tablename,mode = 'w',end = FALSE):
         html_start = '''
         <html>
         <head><title></title></head>
+        <style>
+            table {
+                background-color: red;
+                text-align: center;
+            }
+            
+            table th {
+                background-color: #ffffff;
+            }
+            
+            table td {
+                background-color: #ffffff;
+            }
+        </style>
         <body>
         <DIV align="center">
-        <TABLE CELLSPACING="0" CELLPADDING="0" LANG="en-US" style="">
+        <TABLE CELLSPACING="0" CELLPADDING="0" LANG="en-US">
         <TR><TD>
         <font size="6" color = "BLUE">%s Report</font>
         </TD></TR>
         </TABLE>
         </DIV>
-        <HR/><TABLE border="0"><TR><TD><font size="4" color = "BLUE">%s</font></TD></TR></TABLE>
+        <HR/><TABLE cellspacing="0" border="0"><TR><TD><font size="4" color = "BLUE">%s</font></TD></TR></TABLE>
         '''%(date_now,tablename)
     else:
         html_start = '''
-        <HR/><TABLE border="0"><TR><TD><font size="4" color = "BLUE">%s</font></TD></TR></TABLE>
+        <HR/><TABLE cellspacing="0" border="0"><TR><TD><font size="4" color = "BLUE">%s</font></TD></TR></TABLE>
         '''%tablename
-    if end == TRUE:
+    if end == True:
         html_end = '''
         </body></html>'''
-    pd.set_option('display.max_colwidth', 180)
-    html_table = df.to_html(border = '1', index = True)
-    html_table1 = html_table.replace('class', 'cellspacing=\"1\" cellpadding=\"3\" style="border-color: red" class')
+    pd.set_option('display.max_colwidth', 300)
+    html_table = df.to_html(border = '0', index = False)
+    html_table1 = html_table.replace('class', 'cellspacing=\"1\" cellpadding=\"5\" class')
     html_table2 = html_table1.replace('<tr', '<tr style=\"text-align: center;\"')
 
     html_string = html_start + html_table2 + html_end
@@ -74,15 +89,25 @@ def get_ths_daily_top(engine,date):
     df.replace('nan ', 0, inplace=True)
     return df
 
+def get_ind_daily_top(engine,date):
+    sql = '''SELECT industry,count
+        FROM msstock.tb_daily_group_by_industry_limit_up
+        where trade_date = "%s"
+        order by count desc;''' %(date)
+    df = pd.read_sql_query(sql, engine)
+    df.fillna(0, inplace=True)
+    df.replace('nan ', 0, inplace=True)
+    return df
 
-def report_daily_index(engine,date):
+
+def report_daily_index(engine,date,end = False):
     # 基本指数信息
     date_now = date
     sql = '''SELECT 
 	tb_index_basic.name as 名称,
     round(tb_index_daily.close,2) as 收盘,
     concat(round(tb_index_daily.pct_chg,2),'%s') as 涨跌幅,
-    round(tb_index_dailybasic.total_mv/10e12,2) as 总股本,
+    round(tb_index_dailybasic.total_mv/1e12,2) as '总市值_万亿',
     concat(tb_index_dailybasic.turnover_rate_f,'%s') as 换手率,
     tb_index_dailybasic.pe as 市盈率,
     tb_index_dailybasic.pb as 市净率
@@ -100,15 +125,16 @@ def report_daily_index(engine,date):
     if df_index.empty:
         print ('Empty data in ' + date_now)
     else:
-        savetoreport (date_now,df_index,"指数信息",mode = 'w')
+        savetoreport (date_now,df_index,"指数信息",mode = 'w', end = end)
     return df_index
     
-def report_ths_daily (engine,date):
+def report_ths_daily (engine,date,end = False):
     # 同花顺指数热度
     date_now = date
-    df_ths_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10','Top11','Top12','Top13','Top14','Top15','Top16','Top17','Top18','Top19','Top20'))
+    df_ths_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10','Top11','Top12','Top13','Top14','Top15'))
     end=datetime.datetime.strptime(date,'%Y%m%d')
-    begin=end - datetime.timedelta(days = 30)
+    begin=end - datetime.timedelta(days = 20)
+    myprint('THS Group:')
     for i in range((end - begin).days+1):
         date_i = begin + datetime.timedelta(days=i)
         date_str = date_i.strftime('%Y%m%d')
@@ -116,18 +142,38 @@ def report_ths_daily (engine,date):
         print(date_str)  
         if not df.empty:
             df_ths_days = df_ths_days.append({'Trade_Date':date_str}, ignore_index= True)   
-            #df_ths_days = df_ths_days.append({'Trade_Date':date_str}, ignore_index= True) 
-            for j in range(20):
+            for j in range(15):
                 #df_ths_days['Top%d' %(j+1)][df_ths_days.shape[0]-2] = df['name'][j]
                 df_ths_days['Top%d' %(j+1)][df_ths_days.shape[0]-1] = '%s(%.2f)'%(df['name'][j],(df['pct_change'][j]))
-    myprint('THS Group:')
     if df_ths_days.empty:
         print ('Empty data in ' + date_now)
     else:
-        savetoreport (date,df_ths_days,"同花顺板块热度",mode = 'a', end = TRUE)
+        savetoreport (date,df_ths_days,"同花顺板块热度",mode = 'a', end = end)
     return df_ths_days
 
-def report_TDX_daily (engine,date):
+def report_ind_daily (engine,date,end = False):
+    # 工业板块热度
+    date_now = date
+    df_ind_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10','Top11','Top12','Top13','Top14','Top15'))
+    end=datetime.datetime.strptime(date,'%Y%m%d')
+    begin=end - datetime.timedelta(days = 20)
+    myprint('Industry Group:')
+    for i in range((end - begin).days+1):
+        date_i = begin + datetime.timedelta(days=i)
+        date_str = date_i.strftime('%Y%m%d')
+        df = get_ind_daily_top(engine,date_str)
+        print(date_str)  
+        if not df.empty:
+            df_ind_days = df_ind_days.append({'Trade_Date':date_str}, ignore_index= True)   
+            for j in range(15):
+                df_ind_days['Top%d' %(j+1)][df_ind_days.shape[0]-1] = '%s(%d)'%(df['industry'][j],(df['count'][j]))
+    if df_ind_days.empty:
+        print ('Empty data in ' + date_now)
+    else:
+        savetoreport (date,df_ind_days,"工业板块热度",mode = 'a', end = end)
+    return df_ind_days
+
+def report_TDX_daily (engine,date,end = False):
     date_now = date
     # TDX的每日数据
     myprint('General Data:')
@@ -140,44 +186,46 @@ def report_TDX_daily (engine,date):
     df_output_general = pd.read_sql_query(sql, engine)
     df_output_general.fillna(0, inplace=True)
     df_output_general.replace('nan ', 0, inplace=True)
-    savetoreport (date_now,df_output_general,"每日涨跌基本数据",mode = 'a')
+    savetoreport (date_now,df_output_general,"每日涨跌基本数据",mode = 'a', end = end)
     
     myprint('Limit up:')
     sql = '''
-    select name as 名称,
-    industry as 板块,
-    market as 市场,
-    round(close,2) as 收盘,
-    concat(round(pct_chg,2),'%s') as 涨跌幅,
-    concat(round(turnover_rate,2),'%s') as 换手率,
-    round(pe,2) as 市盈率
-    from msstock.tb_daily_limit_up where trade_date = "%s"
-    order by pct_chg desc;''' %('%%','%%',date_now)
+    select tb_daily_limit_up.name as 名称,
+    tb_daily_limit_up.industry as 板块,
+    round(tb_daily_limit_up.close,2) as 收盘,
+    concat(round(tb_daily_limit_up.pct_chg,2),'%s') as 涨跌幅,
+    concat(round(tb_daily_limit_up.turnover_rate,2),'%s') as 换手率,
+    round(tb_daily_limit_up.pe,2) as 市盈率,
+    round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
+    from msstock.tb_daily_limit_up 
+    left join msstock.tb_daily_data
+    on (tb_daily_limit_up.ts_code = tb_daily_data.ts_code and tb_daily_limit_up.trade_date = tb_daily_data.trade_date)
+    where tb_daily_limit_up.trade_date = "%s"
+    order by tb_daily_limit_up.pct_chg desc;''' %('%%','%%',date_now)
+
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
-    savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a')
-        
-    myprint('Limit up Group:')
-    for group in ['industry']:
-        sql = '''
-        SELECT industry as 工业板块,
-        count as 涨停数
-        FROM msstock.tb_daily_group_by_%s_limit_up
-        where trade_date = "%s"
-        order by count desc;''' %(group,date_now)
-        group_limit_up = pd.read_sql_query(sql, engine)
-        group_limit_up.fillna(0, inplace=True)
-        group_limit_up.replace('nan ', 0, inplace=True)
-        savetoreport (date_now,group_limit_up,"每日涨停",mode = 'a')   
+    savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end)   
 
 # 获取指定日期的分析统计结果
+
+def jiaolongchuhai (engine,date,end = False):
+    date_now = date
+    myprint('jiaolongchuhai:')
+    df = jlch.jiaolongchuhai(date)
+    dfsub = df[['名称','板块','收盘','涨跌幅','换手率','市盈率','总市值_亿']]
+    savetoreport (date_now,dfsub,"蛟龙出海",mode = 'a', end = end)   
+
 def daily_analysis (date):
     engine = sqlalchemy.create_engine(sqlenginestr)
     df_index = report_daily_index(engine,date)
     if not df_index.empty:
         report_TDX_daily (engine,date)
+        report_ind_daily(engine,date)
         report_ths_daily(engine,date)
+        jiaolongchuhai(engine,date, True)
+
 
 if __name__ == '__main__':
     print('start...')
@@ -189,6 +237,7 @@ if __name__ == '__main__':
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
+        date_str = '20220406'
         print(date_str)  
         daily_analysis(date_str)
     print('end')
