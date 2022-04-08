@@ -51,7 +51,7 @@ def jiaolongchuhai (date_str):
         df1.replace('nan ', 0, inplace=True)
         if (row['low'] >  df1['high'][0])  & (row['amount'] < df1['amount'][0]):
             df_output = df_output.append(df.loc[[index]])
-    print (df_output)
+    print ("数量：%d" %df_output.shape[0])
     return df_output
 
 def meas_jiaolongchuhai (data):

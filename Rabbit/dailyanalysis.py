@@ -38,7 +38,7 @@ def savetoreport (date_now,df,tablename,mode = 'w',end = False):
         <head><title></title></head>
         <style>
             table {
-                background-color: red;
+                background-color: gray;
                 text-align: center;
             }
             
@@ -107,8 +107,8 @@ def report_daily_index(engine,date,end = False):
 	tb_index_basic.name as 名称,
     round(tb_index_daily.close,2) as 收盘,
     concat(round(tb_index_daily.pct_chg,2),'%s') as 涨跌幅,
+    round(tb_index_daily.amount/1e5,0) as 成交额_亿,
     round(tb_index_dailybasic.total_mv/1e12,2) as '总市值_万亿',
-    concat(tb_index_dailybasic.turnover_rate_f,'%s') as 换手率,
     tb_index_dailybasic.pe as 市盈率,
     tb_index_dailybasic.pb as 市净率
     FROM msstock.tb_index_daily
@@ -117,7 +117,7 @@ def report_daily_index(engine,date,end = False):
     left join msstock.tb_index_dailybasic 
     on (tb_index_daily.ts_code = tb_index_dailybasic.ts_code and tb_index_daily.trade_date = tb_index_dailybasic.trade_date) 
     where tb_index_daily.ts_code!= '000005.SH' and tb_index_daily.trade_date = "%s"
-    order by tb_index_daily.ts_code;'''%('%%','%%',date_now)
+    order by tb_index_daily.ts_code;'''%('%%',date_now)
     df_index = pd.read_sql_query(sql, engine)
     df_index.fillna(0, inplace=True)
     df_index.replace('nan ', 0, inplace=True)
@@ -131,7 +131,7 @@ def report_daily_index(engine,date,end = False):
 def report_ths_daily (engine,date,end = False):
     # 同花顺指数热度
     date_now = date
-    df_ths_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10','Top11','Top12','Top13','Top14','Top15'))
+    df_ths_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10'))
     end=datetime.datetime.strptime(date,'%Y%m%d')
     begin=end - datetime.timedelta(days = 20)
     myprint('THS Group:')
@@ -142,7 +142,7 @@ def report_ths_daily (engine,date,end = False):
         print(date_str)  
         if not df.empty:
             df_ths_days = df_ths_days.append({'Trade_Date':date_str}, ignore_index= True)   
-            for j in range(15):
+            for j in range(10):
                 #df_ths_days['Top%d' %(j+1)][df_ths_days.shape[0]-2] = df['name'][j]
                 df_ths_days['Top%d' %(j+1)][df_ths_days.shape[0]-1] = '%s(%.2f)'%(df['name'][j],(df['pct_change'][j]))
     if df_ths_days.empty:
@@ -154,7 +154,7 @@ def report_ths_daily (engine,date,end = False):
 def report_ind_daily (engine,date,end = False):
     # 工业板块热度
     date_now = date
-    df_ind_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10','Top11','Top12','Top13','Top14','Top15'))
+    df_ind_days = pd.DataFrame(columns=('Trade_Date','Top1','Top2','Top3','Top4','Top5','Top6','Top7','Top8','Top9','Top10'))
     end=datetime.datetime.strptime(date,'%Y%m%d')
     begin=end - datetime.timedelta(days = 20)
     myprint('Industry Group:')
@@ -165,7 +165,7 @@ def report_ind_daily (engine,date,end = False):
         print(date_str)  
         if not df.empty:
             df_ind_days = df_ind_days.append({'Trade_Date':date_str}, ignore_index= True)   
-            for j in range(15):
+            for j in range(10):
                 df_ind_days['Top%d' %(j+1)][df_ind_days.shape[0]-1] = '%s(%d)'%(df['industry'][j],(df['count'][j]))
     if df_ind_days.empty:
         print ('Empty data in ' + date_now)
@@ -188,25 +188,29 @@ def report_TDX_daily (engine,date,end = False):
     df_output_general.replace('nan ', 0, inplace=True)
     savetoreport (date_now,df_output_general,"每日涨跌基本数据",mode = 'a', end = end)
     
-    myprint('Limit up:')
+    myprint('Limit up list:')
     sql = '''
-    select tb_daily_limit_up.name as 名称,
-    tb_daily_limit_up.industry as 板块,
-    round(tb_daily_limit_up.close,2) as 收盘,
-    concat(round(tb_daily_limit_up.pct_chg,2),'%s') as 涨跌幅,
-    concat(round(tb_daily_limit_up.turnover_rate,2),'%s') as 换手率,
-    round(tb_daily_limit_up.pe,2) as 市盈率,
+    select tb_daily_limit_list.name as 名称,
+    tb_stock_basic.industry as 板块, 
+    tb_stock_basic.market as 市场,
+    round(tb_daily_limit_list.close,2) as 收盘,
+    concat(round(tb_daily_limit_list.pct_chg,2),'%s') as 涨跌幅,
+    concat(round(tb_daily_limit_list.fl_ratio,2),'%s') as 封单量比,
+    round(tb_daily_limit_list.strth,2) as 强度,
+    round(tb_daily_data.pe,2) as 市盈率,
     round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
-    from msstock.tb_daily_limit_up 
+    from msstock.tb_daily_limit_list 
+    left join msstock.tb_stock_basic 
+    on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
     left join msstock.tb_daily_data
-    on (tb_daily_limit_up.ts_code = tb_daily_data.ts_code and tb_daily_limit_up.trade_date = tb_daily_data.trade_date)
-    where tb_daily_limit_up.trade_date = "%s"
-    order by tb_daily_limit_up.pct_chg desc;''' %('%%','%%',date_now)
+    on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
+    where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0 
+    order by tb_daily_limit_list.pct_chg desc;''' %('%%','%%',date_now)
 
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
-    savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end)   
+    savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end) 
 
 # 获取指定日期的分析统计结果
 
@@ -237,7 +241,7 @@ if __name__ == '__main__':
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
-        date_str = '20220406'
+        date_str = '20220407'
         print(date_str)  
         daily_analysis(date_str)
     print('end')

@@ -228,7 +228,7 @@ def get_ths_daily(engine = sqlenginestr,schema = databasename,date_str='20210412
     return True
 
 #计算保存每日涨停数据
-def get_group_output(df, date, columns='industry', name='_limit_up'):
+def get_group_output(df, date, columns='industry', name='limit_up'):
     df = df.copy()
     output = pd.DataFrame()
     output = pd.DataFrame(df.groupby(columns)['ts_code'].count())
@@ -240,81 +240,94 @@ def get_group_output(df, date, columns='industry', name='_limit_up'):
     output.sort_values('ts_code', ascending=False, inplace=True)
     output.rename(columns={'ts_code': 'count'}, inplace=True)
     return output
+#获取每日涨跌停统计
+def get_daily_limit_list(engine = sqlenginestr,schema = databasename,date_str='20210412'):
+    print('start to download limit_list data') 
+    pro = ts.pro_api()
+    df = pro.limit_list(trade_date=date_str)
+    if df.empty:
+        print ('Empty data in ' + date_str)
+    else:
+        save_to_sql(frame=df, name='tb_daily_limit_list', con=engine, schema= schema, if_exists='append', index=False)
+        print('Limit up Group:')
+        sql = '''SELECT tb_daily_limit_list.ts_code,
+        tb_daily_limit_list.trade_date,
+        tb_stock_basic.industry, 
+        tb_daily_data.pe,
+        tb_daily_data.pb
+        FROM msstock.tb_daily_limit_list 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
+        left join msstock.tb_daily_data
+        on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0;
+        ''' %date_str
+        df = pd.read_sql_query(sql, engine)
+        df.fillna(0, inplace=True)
+        df.replace('nan ', 0, inplace=True)
+        for group in ['industry']:
+            group_limit_up = get_group_output(df, date_str, columns=group, name='limit_up')
+            save_to_sql(frame=group_limit_up, name='tb_daily_group_by_%s_limit_up' %group, con=engine, schema= schema, if_exists='append', index=True)
+    return True
+
 def save_TDX_daily (engine = sqlenginestr,schema = databasename, date_str='20210412'):
     # TDX的每日数据
     print('start to compute and save TDX data') 
-    sql = '''SELECT tb_daily_data.ts_code,
-            tb_daily_data.trade_date,
-            tb_stock_basic.name,
-            tb_stock_basic.industry, 
-            tb_stock_basic.market,
-            tb_daily_data.open,
-            tb_daily_data.close,
-            tb_daily_data.high,
-            tb_daily_data.low,
-            tb_daily_data.pre_close,
-            tb_daily_data.change,
-            tb_daily_data.pct_chg,
-            tb_daily_data.turnover_rate,
-            tb_daily_data.volume_ratio,
-            tb_daily_data.pe,
-            tb_daily_data.pb,
-            tb_daily_data.amount,
-            tb_stock_basic.list_date
-            FROM msstock.tb_daily_data 
-            left join msstock.tb_stock_basic 
-            on (tb_daily_data.ts_code = tb_stock_basic.ts_code) 
-            where tb_daily_data.trade_date = "%s" 
-            order by tb_daily_data.pct_chg desc;''' %date_str
+    sql = '''SELECT tb_daily_data.ts_code, 
+        tb_daily_data.trade_date, 
+        tb_daily_data.pct_chg,
+        tb_stock_basic.industry, 
+        tb_stock_basic.market,
+        tb_stock_basic.list_date
+        from msstock.tb_daily_data 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_data.ts_code = tb_stock_basic.ts_code) 
+        where tb_daily_data.trade_date = "%s" ;''' %date_str
     df = pd.read_sql_query(sql, engine)
-    df.fillna(0, inplace=True)
-    df.replace('nan ', 0, inplace=True)
-
     df_up = df[df['pct_chg'] > 0.00]
     df_down = df[df['pct_chg'] < 0.00]
-    df_limit_up = df[(((df['market']=='创业板') | (df['market']=='科创板')) & (df['pct_chg'] >= 19.7) & (df['pct_chg'] < 20.1)) | (((df['market']!='创业板') & (df['market']!='科创板')) & (df['pct_chg'] >= 9.7) & (df['pct_chg'] < 10.1))]
+    sql = '''SELECT tb_daily_limit_list.ts_code,
+        tb_daily_limit_list.trade_date,
+        tb_stock_basic.industry, 
+        tb_stock_basic.market, 
+        tb_stock_basic.list_date
+        FROM msstock.tb_daily_limit_list 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0;
+        ''' %date_str
+    df_limit_up = pd.read_sql_query(sql, engine)
+    df_limit_up.fillna(0, inplace=True)
+    df_limit_up.replace('nan ', 0, inplace=True)
     df_limit_up_new = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(365)]
 
-    df_main = df[((df['market']!='创业板') & (df['market']!='科创板'))]
     df_up_main = df_up[((df_up['market']!='创业板') & (df_up['market']!='科创板'))]
     df_down_main = df_down[((df_down['market']!='创业板') & (df_down['market']!='科创板'))]
-    df_limit_up_main = df_up_main[(df_up_main['pct_chg'] >= 9.7) & (df_up_main['pct_chg'] < 10.1)]
+    df_limit_up_main = df_limit_up[((df_limit_up['market']!='创业板') & (df_limit_up['market']!='科创板'))]
     df_limit_up_new_main = df_limit_up_main[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_main['list_date']) <= pd.Timedelta(365)]
 
-    df_chuangye = df[(df['market']=='创业板')]
     df_up_chuangye = df_up[(df_up['market']=='创业板')]
     df_down_chuangye = df_down[(df_down['market']=='创业板')]
-    df_limit_up_chuangye = df_up_chuangye[(df_up_chuangye['pct_chg'] >= 19.7) & (df_up_chuangye['pct_chg'] < 20.1)]
+    df_limit_up_chuangye = df_limit_up[(df_limit_up['market']=='创业板')]
     df_limit_up_new_chuangye= df_limit_up_chuangye[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_chuangye['list_date']) <= pd.Timedelta(365))]
 
-    df_kechuang = df[(df['market']=='科创板')]
     df_up_kechuang = df_up[(df_up['market']=='科创板')]
     df_down_kechuang = df_down[(df_down['market']=='科创板')]
-    df_limit_up_kechuang = df_up_kechuang[(df_up_kechuang['pct_chg'] >= 19.7) & (df_up_kechuang['pct_chg'] < 20.1)]
+    df_limit_up_kechuang = df_limit_up[(df_limit_up['market']=='科创板')]
     df_limit_up_new_kechuang= df_limit_up_kechuang[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_kechuang['list_date'])) <= pd.Timedelta(365)]
 
     df_output_general = pd.DataFrame(columns=('market','trade_date','up', 'down', 'amount', 'limit_up', 'new_limit_up'))
-    df_output_general.loc[1] = ['全部',date_str,df_up.shape[0],df_down.shape[0],df['amount'].sum(),df_limit_up.shape[0],df_limit_up_new.shape[0]]
-    df_output_general.loc[2] = ['主板',date_str,df_up_main.shape[0],df_down_main.shape[0],df_main['amount'].sum(),df_limit_up_main.shape[0],df_limit_up_new_main.shape[0]]
-    df_output_general.loc[3] = ['创业板',date_str,df_up_chuangye.shape[0],df_down_chuangye.shape[0],df_chuangye['amount'].sum(),df_limit_up_chuangye.shape[0],df_limit_up_new_chuangye.shape[0]]
-    df_output_general.loc[4] = ['科创板',date_str,df_up_kechuang.shape[0],df_down_kechuang.shape[0],df_kechuang['amount'].sum(),df_limit_up_kechuang.shape[0],df_limit_up_new_kechuang.shape[0]]
+    df_output_general.loc[1] = ['全部',date_str,df_up.shape[0],df_down.shape[0],0,df_limit_up.shape[0],df_limit_up_new.shape[0]]
+    df_output_general.loc[2] = ['主板',date_str,df_up_main.shape[0],df_down_main.shape[0],0,df_limit_up_main.shape[0],df_limit_up_new_main.shape[0]]
+    df_output_general.loc[3] = ['创业板',date_str,df_up_chuangye.shape[0],df_down_chuangye.shape[0],0,df_limit_up_chuangye.shape[0],df_limit_up_new_chuangye.shape[0]]
+    df_output_general.loc[4] = ['科创板',date_str,df_up_kechuang.shape[0],df_down_kechuang.shape[0],0,df_limit_up_kechuang.shape[0],df_limit_up_new_kechuang.shape[0]]
     df_output_general[['up', 'down', 'amount', 'limit_up', 'new_limit_up']] = df_output_general[['up', 'down', 'amount', 'limit_up', 'new_limit_up']].astype(int)
-        
+
     print('General Data:')
-    if df_output_general['amount'].sum() == 0:
+    if df_output_general.shape[0]== 0:
         print ('Empty data in ' + date_str)
     else:
         save_to_sql(frame=df_output_general, name='tb_daily_general_data', con=engine, schema= schema, if_exists='append', index=False)
-
-    print('Limit up:')
-    if df_limit_up.empty:
-        print ('Empty data in ' + date_str)
-    else:
-        save_to_sql(frame=df_limit_up, name='tb_daily_limit_up', con=engine, schema= schema, if_exists='append', index=False)
-        print('Limit up Group:')
-        for group in ['industry']:
-            group_limit_up = get_group_output(df_limit_up, date_str, columns=group, name='limit_up')
-            save_to_sql(frame=group_limit_up, name='tb_daily_group_by_%s_limit_up' %group, con=engine, schema= schema, if_exists='append', index=True)
 
 
 def process_weekly(start_date,end_date):
@@ -356,6 +369,7 @@ def process_daily(start_date,end_date):
             get_index_daily(engine,databasename,date_str)
             get_index_dailybasic(engine,databasename,date_str)
             get_ths_daily(engine,databasename,date_str)
+            get_daily_limit_list(engine,databasename,date_str)
             save_TDX_daily(engine,databasename,date_str)
             return True
         else:
@@ -368,8 +382,8 @@ if __name__ == '__main__':
     start=datetime.datetime.now() -datetime.timedelta(days = 0)
     end_date = end.strftime('%Y%m%d')
     start_date = start.strftime('%Y%m%d')
-    start_date = '20220406'
-    end_date = '20220406'
+    start_date = '20220407'
+    end_date = '20220407'
     
     process_daily(start_date,end_date)
     #process_weekly(start_date,end_date)
