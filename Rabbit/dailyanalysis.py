@@ -218,8 +218,9 @@ def jiaolongchuhai (engine,date,end = False):
     date_now = date
     myprint('jiaolongchuhai:')
     df = jlch.jiaolongchuhai(date)
-    dfsub = df[['名称','板块','收盘','涨跌幅','换手率','市盈率','总市值_亿']]
-    savetoreport (date_now,dfsub,"蛟龙出海",mode = 'a', end = end)   
+    if not df.empty:
+        dfsub = df[['名称','板块','市场','收盘','涨跌幅','换手率','市盈率','总市值_亿']]
+        savetoreport (date_now,dfsub,"蛟龙出海",mode = 'a', end = end)   
 
 def daily_analysis (date):
     engine = sqlalchemy.create_engine(sqlenginestr)
@@ -235,13 +236,13 @@ if __name__ == '__main__':
     print('start...')
     print('analyze daily data')
     fmt = '%Y%m%d'
-    end = datetime.datetime.now() -datetime.timedelta(days = 1)
-    start=datetime.datetime.now() -datetime.timedelta(days = 1)
+    end = datetime.datetime.now() -datetime.timedelta(days = 0)
+    start=datetime.datetime.now() -datetime.timedelta(days = 0)
 
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
-        date_str = '20220407'
+        #date_str = '20220407'
         print(date_str)  
         daily_analysis(date_str)
     print('end')
