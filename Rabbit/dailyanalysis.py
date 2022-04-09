@@ -6,6 +6,7 @@ import requests
 import os
 import warnings
 
+import utils
 import sqlalchemy
 from sqlalchemy import exc
 import pymysql
@@ -173,9 +174,85 @@ def report_ind_daily (engine,date,end = False):
         savetoreport (date,df_ind_days,"工业板块热度",mode = 'a', end = end)
     return df_ind_days
 
-def report_TDX_daily (engine,date,end = False):
-    date_now = date
+def report_market_daily(engine,date,end = False):
+    date_str = date
     # TDX的每日数据
+    print('General Data:')
+    sql = '''SELECT tb_daily_data.ts_code, 
+        tb_daily_data.trade_date, 
+        tb_daily_data.pct_chg,
+        tb_stock_basic.industry, 
+        tb_stock_basic.market,
+        tb_stock_basic.list_date
+        from msstock.tb_daily_data 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_data.ts_code = tb_stock_basic.ts_code) 
+        where tb_daily_data.trade_date = "%s" ;''' %date_str
+    df = pd.read_sql_query(sql, engine)
+    df_up = df[df['pct_chg'] > 0.00]
+    df_down = df[df['pct_chg'] < 0.00]
+    sql = '''SELECT tb_daily_limit_list.ts_code,
+        tb_daily_limit_list.trade_date,
+        tb_stock_basic.industry, 
+        tb_stock_basic.market, 
+        tb_stock_basic.list_date
+        FROM msstock.tb_daily_limit_list 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0;
+        ''' %date_str
+    df_limit_up = pd.read_sql_query(sql, engine)
+    df_limit_up.fillna(0, inplace=True)
+    df_limit_up.replace('nan ', 0, inplace=True)
+    df_limit_up_new = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(30)]
+    df_limit_up = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) > pd.Timedelta(30)]
+
+    sql = '''SELECT tb_daily_limit_list.ts_code,
+        tb_daily_limit_list.trade_date,
+        tb_stock_basic.industry, 
+        tb_stock_basic.market, 
+        tb_stock_basic.list_date
+        FROM msstock.tb_daily_limit_list 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'D' and tb_daily_limit_list.pct_chg < 6.0;
+        ''' %date_str
+    df_limit_down = pd.read_sql_query(sql, engine)
+    df_limit_down.fillna(0, inplace=True)
+    df_limit_down.replace('nan ', 0, inplace=True)
+    df_limit_down_new = df_limit_down[pd.to_datetime(date_str) - pd.to_datetime(df_limit_down['list_date']) <= pd.Timedelta(30)]
+    df_limit_down = df_limit_down[pd.to_datetime(date_str) - pd.to_datetime(df_limit_down['list_date']) > pd.Timedelta(30)]
+    
+
+    df_up_main = df_up[((df_up['market']!='创业板') & (df_up['market']!='科创板'))]
+    df_down_main = df_down[((df_down['market']!='创业板') & (df_down['market']!='科创板'))]
+    df_limit_up_main = df_limit_up[((df_limit_up['market']!='创业板') & (df_limit_up['market']!='科创板'))]
+    df_limit_down_main = df_limit_down[((df_limit_down['market']!='创业板') & (df_limit_down['market']!='科创板'))]
+    
+    df_limit_up_new_main = df_limit_up_main[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_main['list_date']) <= pd.Timedelta(365)]
+
+    df_up_chuangye = df_up[(df_up['market']=='创业板')]
+    df_down_chuangye = df_down[(df_down['market']=='创业板')]
+    df_limit_up_chuangye = df_limit_up[(df_limit_up['market']=='创业板')]
+    df_limit_down_chuangye = df_limit_down[(df_limit_down['market']=='创业板')]
+    df_limit_up_new_chuangye= df_limit_up_chuangye[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_chuangye['list_date']) <= pd.Timedelta(365))]
+
+    df_up_kechuang = df_up[(df_up['market']=='科创板')]
+    df_down_kechuang = df_down[(df_down['market']=='科创板')]
+    df_limit_up_kechuang = df_limit_up[(df_limit_up['market']=='科创板')]
+    df_limit_down_kechuang = df_limit_down[(df_limit_down['market']=='科创板')]
+    df_limit_up_new_kechuang= df_limit_up_kechuang[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_kechuang['list_date'])) <= pd.Timedelta(365)]
+
+    df_output_general = pd.DataFrame(columns=('市场','张', '跌', '涨停', '跌停' ))
+    df_output_general.loc[1] = ['全部',df_up.shape[0],df_down.shape[0],df_limit_up.shape[0],df_limit_down.shape[0]]
+    df_output_general.loc[2] = ['主板',df_up_main.shape[0],df_down_main.shape[0],df_limit_up_main.shape[0],df_limit_down_main.shape[0]]
+    df_output_general.loc[3] = ['创业板',df_up_chuangye.shape[0],df_down_chuangye.shape[0],df_limit_up_chuangye.shape[0],df_limit_down_chuangye.shape[0]]
+    df_output_general.loc[4] = ['科创板',df_up_kechuang.shape[0],df_down_kechuang.shape[0],df_limit_up_kechuang.shape[0],df_limit_down_kechuang.shape[0]]
+    
+    savetoreport (date_str,df_output_general,"每日涨跌基本数据",mode = 'a', end = end)
+        
+def report_market_daily_from_sql(engine,date,end = False):
+    date_now = date
     myprint('General Data:')
     sql = '''SELECT market as 市场,
     up as 涨,
@@ -187,29 +264,34 @@ def report_TDX_daily (engine,date,end = False):
     df_output_general.fillna(0, inplace=True)
     df_output_general.replace('nan ', 0, inplace=True)
     savetoreport (date_now,df_output_general,"每日涨跌基本数据",mode = 'a', end = end)
-    
+
+def report_limit_daily (engine,date,end = False):
+    date_now = date
     myprint('Limit up list:')
+    df = get_ind_daily_top(engine,date_now) 
+    #if not df.empty:
     sql = '''
-    select tb_daily_limit_list.name as 名称,
-    tb_stock_basic.industry as 板块, 
-    tb_stock_basic.market as 市场,
-    round(tb_daily_limit_list.close,2) as 收盘,
-    concat(round(tb_daily_limit_list.pct_chg,2),'%s') as 涨跌幅,
-    concat(round(tb_daily_limit_list.fl_ratio,2),'%s') as 封单量比,
-    round(tb_daily_limit_list.strth,2) as 强度,
-    round(tb_daily_data.pe,2) as 市盈率,
-    round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
-    from msstock.tb_daily_limit_list 
-    left join msstock.tb_stock_basic 
-    on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
-    left join msstock.tb_daily_data
-    on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
-    where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0 
-    order by tb_daily_limit_list.pct_chg desc;''' %('%%','%%',date_now)
+        select tb_daily_limit_list.name as 名称,
+        tb_stock_basic.industry as 板块, 
+        tb_stock_basic.market as 市场,
+        round(tb_daily_limit_list.close,2) as 收盘,
+        concat(round(tb_daily_limit_list.pct_chg,2),'%s') as 涨跌幅,
+        concat(round(tb_daily_limit_list.fl_ratio,2),'%s') as 封单量比,
+        round(tb_daily_limit_list.strth,2) as 强度,
+        round(tb_daily_data.pe,2) as 市盈率,
+        round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
+        from msstock.tb_daily_limit_list 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
+        left join msstock.tb_daily_data
+        on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0 
+        order by tb_daily_limit_list.pct_chg desc;''' %('%%','%%',date_now)
 
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
+    
     savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end) 
 
 # 获取指定日期的分析统计结果
@@ -226,7 +308,8 @@ def daily_analysis (date):
     engine = sqlalchemy.create_engine(sqlenginestr)
     df_index = report_daily_index(engine,date)
     if not df_index.empty:
-        report_TDX_daily (engine,date)
+        report_market_daily (engine,date)
+        report_limit_daily (engine,date)
         report_ind_daily(engine,date)
         report_ths_daily(engine,date)
         jiaolongchuhai(engine,date, True)
@@ -242,7 +325,7 @@ if __name__ == '__main__':
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
-        date_str = '20220407'
+        date_str = '20220408'
         print(date_str)  
         daily_analysis(date_str)
     print('end')
