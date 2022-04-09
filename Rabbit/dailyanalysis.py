@@ -242,7 +242,7 @@ if __name__ == '__main__':
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
-        #date_str = '20220407'
+        date_str = '20220407'
         print(date_str)  
         daily_analysis(date_str)
     print('end')

@@ -382,9 +382,9 @@ if __name__ == '__main__':
     start=datetime.datetime.now() -datetime.timedelta(days = 0)
     end_date = end.strftime('%Y%m%d')
     start_date = start.strftime('%Y%m%d')
-    start_date = '20220408'
-    end_date = '20220408'
+    start_date = '20220407'
+    end_date = '20220407'
     
     process_daily(start_date,end_date)
-    #process_weekly(start_date,end_date)
+    process_weekly(start_date,end_date)
     print('结束')
