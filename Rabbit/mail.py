@@ -46,7 +46,7 @@ def get_report_filename(date):
     filename = basedir+date+'_report.html'
     return filename
 if __name__ == '__main__':
-    filename = basedir+ '20220401_report.html'
+    filename = basedir+ '20220408_report.html'
     content = get_content_from_file(filename)
     if send_mail("Daily Report",content):
         print ("发送成功")
