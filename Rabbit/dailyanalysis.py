@@ -268,12 +268,12 @@ def report_market_daily_from_sql(engine,date,end = False):
 def report_limit_daily (engine,date,end = False):
     date_now = date
     myprint('Limit up list:')
-    df = get_ind_daily_top(engine,date_now) 
+    df_ind_daily_top = get_ind_daily_top(engine,date_now) 
     #if not df.empty:
     sql = '''
-        select tb_daily_limit_list.name as 名称,
+        select tb_daily_limit_list.ts_code,
+        tb_daily_limit_list.name as 名称,
         tb_stock_basic.industry as 板块, 
-        tb_stock_basic.market as 市场,
         round(tb_daily_limit_list.close,2) as 收盘,
         concat(round(tb_daily_limit_list.pct_chg,2),'%s') as 涨跌幅,
         concat(round(tb_daily_limit_list.fl_ratio,2),'%s') as 封单量比,
@@ -285,17 +285,36 @@ def report_limit_daily (engine,date,end = False):
         on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
         left join msstock.tb_daily_data
         on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
-        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0 
-        order by tb_daily_limit_list.pct_chg desc;''' %('%%','%%',date_now)
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0
+        and (tb_stock_basic.industry = '%s' or tb_stock_basic.industry = '%s' or tb_stock_basic.industry = '%s') 
+        order by tb_stock_basic.industry;''' %('%%','%%',date_now,df_ind_daily_top.iloc[0]['industry'],df_ind_daily_top.iloc[1]['industry'] ,df_ind_daily_top.iloc[2]['industry'] )
 
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
-    
+    df_limit_up.insert(lic =2, column = '连扳', value = '')
+    for i in range(0, len(df_limit_up)): 
+        ts_code = df_limit_up.iloc[i]['ts_code']
+        qty_limit_up = get_qty_limit_up(ts_code,date)
+
     savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end) 
 
-# 获取指定日期的分析统计结果
+# 获取指定日期的股票的连板数
+def get_qty_limit_up(engine,code,date_str):
+    qty_limit_up = 1
+    previous_date = date_str
+    for i in range(20):
+        previous_date = utils.get_previous_date(previous_date)
+        sql = '''SELECT ts_code,trade_date FROM msstock.tb_daily_limit_list 
+            where ts_code = '%s' and trade_date = '%s';'''%(code,previous_date)
+        df = pd.read_sql_query(sql, engine)
+        if not df.empty:
+            qty_limit_up = qty_limit_up+1
+        else:
+            break
+    return qty_limit_up
 
+# 获取指定日期的分析统计结果
 def jiaolongchuhai (engine,date,end = False):
     date_now = date
     myprint('jiaolongchuhai:')

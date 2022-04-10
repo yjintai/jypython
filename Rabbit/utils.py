@@ -24,21 +24,23 @@ def business_day_offset (date,offset):
 
 
 
-#获取date类型的最近交易日期
-def get_trade_date(date):
+#获取str类型的最近交易日期
+def get_trade_date(date_str):
     ts.set_token(tushare_token)
+    date=datetime.datetime.strptime(date_str,'%Y%m%d')
     pro = ts.pro_api()
-    date_str = date.strftime("%Y%m%d")
     while not pro.query('trade_cal', start_date=date_str, end_date=date_str, fields="is_open").iloc[0,0]:
         date = date + datetime.timedelta(days=-1)
         date_str = date.strftime("%Y%m%d")
-    return date
+    return date_str
 
-#获取date类型的上一个交易日期
-def get_previous_date(date):
+#获取str类型的上一个交易日期
+def get_previous_date(date_str):
+    date=datetime.datetime.strptime(date_str,'%Y%m%d')
     previous_date = date + datetime.timedelta(days=-1)
-    previous_cal_date = get_trade_date(previous_date)
-    return previous_cal_date
+    previous_date_str = previous_date.strftime("%Y%m%d")
+    previous_cal_date_str = get_trade_date(previous_date_str)
+    return previous_cal_date_str
 
 #获取str类型的今天的最近交易日期
 def get_today_str():
@@ -46,5 +48,6 @@ def get_today_str():
     now = datetime.datetime.now().strftime("%H:%M")
     if now < '17:00': #5点前取前一个交易日
         today = today + datetime.timedelta(days=-1)
-    today = get_trade_date(today)
-    return today.strftime("%Y%m%d")
+    today_str = today.strftime("%Y%m%d")
+    today_str = get_trade_date(today_str)
+    return today_str
