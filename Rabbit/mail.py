@@ -7,7 +7,7 @@ import smtplib
 basedir = 'D:/Works/python/report/dailyanalysis/'
 
 #发件人列表
-to_list=["228442236@qq.com","yjintai@126.com"]
+to_list=["228442236@qq.com"]
 mail_server="smtp.126.com" # 126的邮件服务器
 mail_user="yjintai@126.com" #必须是真实存在的用户
 mail_passwd="STBLWUMPTXXVWQWP" #

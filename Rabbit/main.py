@@ -24,8 +24,8 @@ def job():
 if __name__ == '__main__':
     
     print('开始')
-    end = datetime.datetime.now() -datetime.timedelta(days = 1)
-    start=datetime.datetime.now() -datetime.timedelta(days = 1)
+    end = datetime.datetime.now() -datetime.timedelta(days = 0)
+    start=datetime.datetime.now() -datetime.timedelta(days = 0)
     end_date = end.strftime('%Y%m%d')
     start_date = start.strftime('%Y%m%d')
     #start_date = '20150515'
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     
     print('获取列表...')
     gdts.process_daily(start_date,end_date)
-    gdts.process_weekly(start_date,end_date)
+    gdts.process_weekly(end_date)
     print('处理数据...')
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)

@@ -330,23 +330,15 @@ def save_TDX_daily (engine = sqlenginestr,schema = databasename, date_str='20210
         save_to_sql(frame=df_output_general, name='tb_daily_general_data', con=engine, schema= schema, if_exists='append', index=False)
 
 
-def process_weekly(start_date,end_date):
+def process_weekly(end_date):
     print('start process weekly data') 
     engine = initiate()
     #May be updated weekly.
-    fmt = '%Y%m%d'
-    begin=datetime.datetime.strptime(start_date,fmt)
-    end=datetime.datetime.strptime(end_date,fmt)
-    for i in range((end - begin).days+1):
-        date = begin + datetime.timedelta(days=i)
-        date_str = date.strftime('%Y%m%d')
-        print(date_str)
-        
-        get_hs_const(engine,databasename)
-        get_trade_cal(engine,databasename,'20200101',date_str)
-        #get_concept(engine,databasename)
-        get_index_basic(engine,databasename)
-        get_ths_index(engine,databasename)
+    print(end_date)
+    get_hs_const(engine,databasename)
+    #get_concept(engine,databasename)
+    get_index_basic(engine,databasename)
+    get_ths_index(engine,databasename)
     
 def process_daily(start_date,end_date):
     engine = initiate()
@@ -355,25 +347,25 @@ def process_daily(start_date,end_date):
     fmt = '%Y%m%d'
     begin=datetime.datetime.strptime(start_date,fmt)
     end=datetime.datetime.strptime(end_date,fmt)
+
+    get_trade_cal(engine,databasename,'20200101',end_date)
+    get_moneyflow_hsgt(engine,databasename,'20200101',end_date)
+    get_rzrq_margin(engine,databasename,'20200101',end_date)
+    get_stock_basic(engine,databasename)
+
     for i in range((end - begin).days+1):
         date = begin + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
         print(date_str)
-        if get_daily_data(engine,databasename,date_str) != False:
-            get_moneyflow_hsgt(engine,databasename,'20200101',date_str)
-            get_rzrq_margin(engine,databasename,'20200101',date_str)
-            get_daily_top_list_data(engine,databasename,date_str)
-            
-            #updated after 5:00PM every day
-            get_stock_basic(engine,databasename)
-            get_index_daily(engine,databasename,date_str)
-            get_index_dailybasic(engine,databasename,date_str)
-            get_ths_daily(engine,databasename,date_str)
-            get_daily_limit_list(engine,databasename,date_str)
-            save_TDX_daily(engine,databasename,date_str)
-            return True
-        else:
-            return False
+        get_daily_data(engine,databasename,date_str)
+        get_daily_top_list_data(engine,databasename,date_str)
+        #updated after 5:00PM every day
+        get_index_daily(engine,databasename,date_str)
+        get_index_dailybasic(engine,databasename,date_str)
+        get_ths_daily(engine,databasename,date_str)
+        get_daily_limit_list(engine,databasename,date_str)
+        #save_TDX_daily(engine,databasename,date_str)
+    return True
     
 
 if __name__ == '__main__':
@@ -382,9 +374,9 @@ if __name__ == '__main__':
     start=datetime.datetime.now() -datetime.timedelta(days = 0)
     end_date = end.strftime('%Y%m%d')
     start_date = start.strftime('%Y%m%d')
-    start_date = '20220407'
-    end_date = '20220407'
+    #start_date = '20220407'
+    #end_date = '20220407'
     
     process_daily(start_date,end_date)
-    process_weekly(start_date,end_date)
+    process_weekly(end_date)
     print('结束')
