@@ -333,8 +333,8 @@ def daily_analysis (date):
         report_market_daily (engine,date)
         report_limit_daily (engine,date)
         report_ind_daily(engine,date)
-        report_ths_daily(engine,date)
-        #jiaolongchuhai(engine,date, True)
+        #report_ths_daily(engine,date)
+        jiaolongchuhai(engine,date, True)
 
 
 if __name__ == '__main__':
