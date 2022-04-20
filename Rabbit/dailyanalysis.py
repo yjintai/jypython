@@ -308,7 +308,7 @@ def get_qty_limit_up(engine,code,date_str):
     for i in range(20):
         previous_date = utils.get_previous_date(previous_date)
         sql = '''SELECT ts_code,trade_date FROM msstock.tb_daily_limit_list 
-            where ts_code = '%s' and trade_date = '%s';'''%(code,previous_date)
+            where ts_code = '%s' and trade_date = '%s' and tb_daily_limit_list.limit = 'U';'''%(code,previous_date)
         df = pd.read_sql_query(sql, engine)
         if not df.empty:
             qty_limit_up = qty_limit_up+1
