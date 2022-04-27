@@ -9,7 +9,7 @@ import pymysql
 import utils
 
 databasename = 'msstock'
-sqlenginestr='mysql+pymysql://root:root@127.0.0.1/'+databasename+'?charset=utf8mb4'
+sqlenginestr='mysql+pymysql://pyuser:Pyuser18@127.0.0.1/'+databasename+'?charset=utf8mb4'
 
 pd.set_option('expand_frame_repr', False)
 pd.set_option('display.max_rows', None)

@@ -11,7 +11,7 @@ from sqlalchemy import exc
 import pymysql
 
 databasename = 'msstock'
-sqlenginestr='mysql+pymysql://root:root@127.0.0.1/'+databasename+'?charset=utf8mb4'
+sqlenginestr='mysql+pymysql://pyuser:Pyuser18@127.0.0.1/'+databasename+'?charset=utf8mb4'
 
 def initiate():
     #初始化tushare

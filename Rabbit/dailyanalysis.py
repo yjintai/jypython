@@ -8,12 +8,12 @@ import warnings
 
 import utils
 import sqlalchemy
-from sqlalchemy import exc
+from sqlalchemy import engine_from_config, exc
 import pymysql
 import jiaolongchuhai as jlch
 
 databasename = 'msstock'
-sqlenginestr='mysql+pymysql://root:root@127.0.0.1/'+databasename+'?charset=utf8mb4'
+sqlenginestr='mysql+pymysql://pyuser:Pyuser18@127.0.0.1/'+databasename+'?charset=utf8mb4'
 
 warnings.filterwarnings('ignore')
 pd.set_option('expand_frame_repr', False)
@@ -328,14 +328,17 @@ def jiaolongchuhai (engine,date,end = False):
 
 def daily_analysis (date):
     engine = sqlalchemy.create_engine(sqlenginestr)
+
     df_index = report_daily_index(engine,date)
+    '''
     if not df_index.empty:
         report_market_daily (engine,date)
         report_limit_daily (engine,date)
         report_ind_daily(engine,date)
         #report_ths_daily(engine,date)
-        jiaolongchuhai(engine,date, True)
-
+        jiaolongchuhai(engine,date, True)'''
+    # 关闭连接
+    engine.dispose()
 
 if __name__ == '__main__':
     print('start...')
