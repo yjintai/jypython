@@ -330,13 +330,13 @@ def daily_analysis (date):
     engine = sqlalchemy.create_engine(sqlenginestr)
 
     df_index = report_daily_index(engine,date)
-    '''
+    
     if not df_index.empty:
         report_market_daily (engine,date)
         report_limit_daily (engine,date)
         report_ind_daily(engine,date)
         #report_ths_daily(engine,date)
-        jiaolongchuhai(engine,date, True)'''
+        jiaolongchuhai(engine,date, True)
     # 关闭连接
     engine.dispose()
 
@@ -350,7 +350,7 @@ if __name__ == '__main__':
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
-        date_str = '20220408'
+        date_str = '20220427'
         print(date_str)  
         daily_analysis(date_str)
     print('end')
