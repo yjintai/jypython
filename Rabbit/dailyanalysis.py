@@ -265,6 +265,7 @@ def report_market_daily_from_sql(engine,date,end = False):
     df_output_general.replace('nan ', 0, inplace=True)
     savetoreport (date_now,df_output_general,"每日涨跌基本数据",mode = 'a', end = end)
 
+#获取指定日期涨停最多的4个工业板块的涨停股票和它们的连扳数。
 def report_limit_daily (engine,date,end = False):
     date_now = date
     myprint('Limit up list:')
@@ -301,6 +302,40 @@ def report_limit_daily (engine,date,end = False):
     df_limit_up = df_limit_up.sort_values(by=['板块','连板'],ascending=False)
     savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end)
 
+#获取指定日期涨停连扳数的TOP5。
+def report_limit_TOPn_daily (engine,date,end = False):
+    date_now = date
+    myprint('Limit up TOP n list:')
+    #if not df.empty:
+    sql = '''
+        select tb_daily_limit_list.ts_code,
+        tb_daily_limit_list.name as 名称,
+        tb_stock_basic.industry as 板块, 
+        round(tb_daily_limit_list.close,2) as 收盘,
+        concat(round(tb_daily_limit_list.pct_chg,2),'%s') as 涨跌幅,
+        concat(round(tb_daily_limit_list.fl_ratio,2),'%s') as 封单量比,
+        round(tb_daily_limit_list.strth,2) as 强度,
+        round(tb_daily_data.pe,2) as 市盈率,
+        round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
+        from msstock.tb_daily_limit_list 
+        left join msstock.tb_stock_basic 
+        on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
+        left join msstock.tb_daily_data
+        on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0;
+        ''' %('%%','%%',date_now )
+
+    df_limit_up = pd.read_sql_query(sql, engine)
+    df_limit_up.fillna(0, inplace=True)
+    df_limit_up.replace('nan ', 0, inplace=True)
+    df_limit_up.insert(loc =3, column = '连板', value = '')
+    for i in range(0, len(df_limit_up)): 
+        ts_code = df_limit_up.iloc[i]['ts_code']
+        qty_limit_up = get_qty_limit_up(engine,ts_code,date)
+        df_limit_up['连板'][i] = qty_limit_up
+    df_limit_up = df_limit_up.sort_values(by=['连板'],ascending=False)
+    savetoreport (date_now,df_limit_up,"每日涨停板",mode = 'a', end = end)
+
 # 获取指定日期的股票的连板数
 def get_qty_limit_up(engine,code,date_str):
     qty_limit_up = 1
@@ -334,6 +369,7 @@ def daily_analysis (date):
     if not df_index.empty:
         report_market_daily (engine,date)
         report_limit_daily (engine,date)
+        report_limit_TOPn_daily (engine,date)
         report_ind_daily(engine,date)
         #report_ths_daily(engine,date)
         jiaolongchuhai(engine,date, True)
