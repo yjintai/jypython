@@ -371,7 +371,7 @@ def process_daily(start_date,end_date):
 if __name__ == '__main__':
     print('开始')
     end = datetime.datetime.now() -datetime.timedelta(days = 0)
-    start=datetime.datetime.now() -datetime.timedelta(days = 0)
+    start=datetime.datetime.now() -datetime.timedelta(days = 4)
     end_date = end.strftime('%Y%m%d')
     start_date = start.strftime('%Y%m%d')
     #start_date = '20220407'

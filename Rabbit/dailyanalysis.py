@@ -334,7 +334,7 @@ def report_limit_TOPn_daily (engine,date,end = False):
         qty_limit_up = get_qty_limit_up(engine,ts_code,date)
         df_limit_up['连板'][i] = qty_limit_up
     df_limit_up = df_limit_up.sort_values(by=['连板'],ascending=False)
-    savetoreport (date_now,df_limit_up,"每日涨停板",mode = 'a', end = end)
+    savetoreport (date_now,df_limit_up.head(10),"每日涨停板高度",mode = 'a', end = end)
 
 # 获取指定日期的股票的连板数
 def get_qty_limit_up(engine,code,date_str):
@@ -386,7 +386,7 @@ if __name__ == '__main__':
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
-        date_str = '20220427'
+        date_str = '20220718'
         print(date_str)  
         daily_analysis(date_str)
     print('end')
