@@ -31,10 +31,11 @@ https://github.com/profile/sshkeys
 5）、完成啦~
 
 远程管理：
+REM 记得POWERSHELL 或者 VSCODE必须以管理员权限运行。
 REM sync the git local Repository to github Repository "jypython"
-git remote add origin git@github.com:yjintai/jypython.git //SSH with security
-git push -u origin master
-git push origin master
+git remote add github_jypython git@github.com:yjintai/jypython.git //SSH with security
+git push -u github_jypython master
+git push github_jypython master
 
 git remote add jypython https://github.com/yjintai/jypython.git  //HTTP
 git push -u github_jypython master
