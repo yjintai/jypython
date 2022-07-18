@@ -37,8 +37,8 @@ git push -u origin master
 git push origin master
 
 git remote add jypython https://github.com/yjintai/jypython.git  //HTTP
-git push -u jypython master
-git push jypython master
+git push -u github_jypython master
+git push github_jypython master
 
 git cd /d/Works/python/jypython
 git clone https://github.com/yjintai/jypython.git
