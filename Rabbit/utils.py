@@ -34,9 +34,6 @@ def business_day_offset (date,offset):
     return date+day_offset
 
 
-
-
-
 #获取str类型的最近交易日期
 def get_trade_date(date_str):
     engine = initiate()
@@ -70,3 +67,18 @@ def get_today_str():
     today_str = today.strftime("%Y%m%d")
     today_str = get_trade_date(today_str)
     return today_str
+
+# 获取指定日期的股票的连板数
+def get_qty_limit_up(code,date_str):
+    qty_limit_up = 1
+    previous_date = date_str
+    pro = ts.pro_api()
+    for i in range(20):
+        previous_date = get_previous_date(previous_date)
+        df = pro.limit_list(trade_date=previous_date, ts_code = code, limit_type = 'U')
+        if not df.empty:
+            qty_limit_up = qty_limit_up+1
+        else:
+            break
+    print  ("%s:%d" %(code,qty_limit_up))
+    return qty_limit_up

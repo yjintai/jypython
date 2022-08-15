@@ -291,13 +291,17 @@ def report_limit_daily (engine,date,end = False):
         order by tb_stock_basic.industry;
         ''' %('%%','%%',date_now,df_ind_daily_top.iloc[0]['industry'],df_ind_daily_top.iloc[1]['industry'],df_ind_daily_top.iloc[2]['industry'],df_ind_daily_top.iloc[3]['industry'] )
 
+
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
+    df_limit_up = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(30)]
+    
+
     df_limit_up.insert(loc =3, column = '连板', value = '')
     for i in range(0, len(df_limit_up)): 
         ts_code = df_limit_up.iloc[i]['ts_code']
-        qty_limit_up = get_qty_limit_up(engine,ts_code,date)
+        qty_limit_up = utils.get_qty_limit_up(ts_code,date)
         df_limit_up['连板'][i] = qty_limit_up
     df_limit_up = df_limit_up.sort_values(by=['板块','连板'],ascending=False)
     savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end)
@@ -322,16 +326,18 @@ def report_limit_TOPn_daily (engine,date,end = False):
         on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
         left join msstock.tb_daily_data
         on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
-        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0;
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0
+        and tb_daily_data.;
         ''' %('%%','%%',date_now )
 
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
+    df_limit_up = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(30)]
     df_limit_up.insert(loc =3, column = '连板', value = '')
     for i in range(0, len(df_limit_up)): 
         ts_code = df_limit_up.iloc[i]['ts_code']
-        qty_limit_up = get_qty_limit_up(engine,ts_code,date)
+        qty_limit_up = utils.get_qty_limit_up(ts_code,date)
         df_limit_up['连板'][i] = qty_limit_up
     df_limit_up = df_limit_up.sort_values(by=['连板'],ascending=False)
     savetoreport (date_now,df_limit_up.head(10),"每日涨停板高度",mode = 'a', end = end)
@@ -348,7 +354,7 @@ def get_qty_limit_up(engine,code,date_str):
         if not df.empty:
             qty_limit_up = qty_limit_up+1
         else:
-            break
+            break  
     print  ("%s:%d" %(code,qty_limit_up))
     return qty_limit_up
 
