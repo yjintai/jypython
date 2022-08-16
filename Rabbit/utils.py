@@ -51,12 +51,23 @@ def get_trade_date(date_str):
     return date_str
 
 #获取str类型的上一个交易日期
-def get_previous_date(date_str):
-    date=datetime.datetime.strptime(date_str,'%Y%m%d')
-    previous_date = date + datetime.timedelta(days=-1)
-    previous_date_str = previous_date.strftime("%Y%m%d")
-    previous_cal_date_str = get_trade_date(previous_date_str)
+def get_previous_trade_date(date_str, delta=1):
+    previous_cal_date=datetime.datetime.strptime(date_str,'%Y%m%d')
+    i = delta
+    while i >0 :
+        i = i-1
+        previous_date = previous_cal_date - datetime.timedelta(days=1)
+        previous_date_str = previous_date.strftime("%Y%m%d")
+        previous_cal_date_str = get_trade_date(previous_date_str)
+        previous_cal_date = datetime.datetime.strptime(previous_cal_date_str,'%Y%m%d')
     return previous_cal_date_str
+
+#获取str类型的前n个自然日期
+def get_previous_date(date_str,delta=1):
+    date=datetime.datetime.strptime(date_str,'%Y%m%d')
+    previous_date = date - datetime.timedelta(days=delta)
+    previous_date_str = previous_date.strftime("%Y%m%d")
+    return previous_date_str
 
 #获取str类型的今天的最近交易日期
 def get_today_str():
@@ -71,12 +82,18 @@ def get_today_str():
 # 获取指定日期的股票的连板数
 def get_qty_limit_up(code,date_str):
     qty_limit_up = 1
-    previous_date = date_str
+    end_date = date_str
+    start_date = get_previous_trade_date(date_str,20)
     pro = ts.pro_api()
-    for i in range(20):
-        previous_date = get_previous_date(previous_date)
-        df = pro.limit_list(trade_date=previous_date, ts_code = code, limit_type = 'U')
-        if not df.empty:
+    df = pro.limit_list(start_date=start_date, end_date= end_date, ts_code = code, limit_type = 'U')
+    df.sort_values(by=['trade_date'],ascending=False)
+    previous_date = date_str
+    i = df.shape[0]
+    while i >0 :
+        i = i-1
+        previous_date = get_previous_trade_date(previous_date)
+        df1 = df[df['trade_date']== previous_date]
+        if not df1.empty:
             qty_limit_up = qty_limit_up+1
         else:
             break

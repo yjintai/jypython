@@ -204,8 +204,8 @@ def report_market_daily(engine,date,end = False):
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
-    df_limit_up_new = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(30)]
-    df_limit_up = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) > pd.Timedelta(30)]
+    df_limit_up_new = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(days=30)]
+    df_limit_up = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) > pd.Timedelta(days=30)]
 
     sql = '''SELECT tb_daily_limit_list.ts_code,
         tb_daily_limit_list.trade_date,
@@ -220,8 +220,8 @@ def report_market_daily(engine,date,end = False):
     df_limit_down = pd.read_sql_query(sql, engine)
     df_limit_down.fillna(0, inplace=True)
     df_limit_down.replace('nan ', 0, inplace=True)
-    df_limit_down_new = df_limit_down[pd.to_datetime(date_str) - pd.to_datetime(df_limit_down['list_date']) <= pd.Timedelta(30)]
-    df_limit_down = df_limit_down[pd.to_datetime(date_str) - pd.to_datetime(df_limit_down['list_date']) > pd.Timedelta(30)]
+    df_limit_down_new = df_limit_down[pd.to_datetime(date_str) - pd.to_datetime(df_limit_down['list_date']) <= pd.Timedelta(days=30)]
+    df_limit_down = df_limit_down[pd.to_datetime(date_str) - pd.to_datetime(df_limit_down['list_date']) > pd.Timedelta(days=30)]
     
 
     df_up_main = df_up[((df_up['market']!='创业板') & (df_up['market']!='科创板'))]
@@ -229,19 +229,19 @@ def report_market_daily(engine,date,end = False):
     df_limit_up_main = df_limit_up[((df_limit_up['market']!='创业板') & (df_limit_up['market']!='科创板'))]
     df_limit_down_main = df_limit_down[((df_limit_down['market']!='创业板') & (df_limit_down['market']!='科创板'))]
     
-    df_limit_up_new_main = df_limit_up_main[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_main['list_date']) <= pd.Timedelta(365)]
+    df_limit_up_new_main = df_limit_up_main[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_main['list_date']) <= pd.Timedelta(days=30)]
 
     df_up_chuangye = df_up[(df_up['market']=='创业板')]
     df_down_chuangye = df_down[(df_down['market']=='创业板')]
     df_limit_up_chuangye = df_limit_up[(df_limit_up['market']=='创业板')]
     df_limit_down_chuangye = df_limit_down[(df_limit_down['market']=='创业板')]
-    df_limit_up_new_chuangye= df_limit_up_chuangye[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_chuangye['list_date']) <= pd.Timedelta(365))]
+    df_limit_up_new_chuangye= df_limit_up_chuangye[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_chuangye['list_date']) <= pd.Timedelta(days=30))]
 
     df_up_kechuang = df_up[(df_up['market']=='科创板')]
     df_down_kechuang = df_down[(df_down['market']=='科创板')]
     df_limit_up_kechuang = df_limit_up[(df_limit_up['market']=='科创板')]
     df_limit_down_kechuang = df_limit_down[(df_limit_down['market']=='科创板')]
-    df_limit_up_new_kechuang= df_limit_up_kechuang[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_kechuang['list_date'])) <= pd.Timedelta(365)]
+    df_limit_up_new_kechuang= df_limit_up_kechuang[(pd.to_datetime(date_str) - pd.to_datetime(df_limit_up_kechuang['list_date'])) <= pd.Timedelta(days=30)]
 
     df_output_general = pd.DataFrame(columns=('市场','张', '跌', '涨停', '跌停' ))
     df_output_general.loc[1] = ['全部',df_up.shape[0],df_down.shape[0],df_limit_up.shape[0],df_limit_down.shape[0]]
@@ -280,7 +280,8 @@ def report_limit_daily (engine,date,end = False):
         concat(round(tb_daily_limit_list.fl_ratio,2),'%s') as 封单量比,
         round(tb_daily_limit_list.strth,2) as 强度,
         round(tb_daily_data.pe,2) as 市盈率,
-        round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
+        round(tb_daily_data.total_mv/1e4,2) as 总市值_亿,
+        tb_stock_basic.list_date
         from msstock.tb_daily_limit_list 
         left join msstock.tb_stock_basic 
         on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
@@ -291,18 +292,16 @@ def report_limit_daily (engine,date,end = False):
         order by tb_stock_basic.industry;
         ''' %('%%','%%',date_now,df_ind_daily_top.iloc[0]['industry'],df_ind_daily_top.iloc[1]['industry'],df_ind_daily_top.iloc[2]['industry'],df_ind_daily_top.iloc[3]['industry'] )
 
-
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
-    df_limit_up = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(30)]
-    
-
-    df_limit_up.insert(loc =3, column = '连板', value = '')
-    for i in range(0, len(df_limit_up)): 
+    df_limit_up = df_limit_up[pd.to_datetime(date_now) - pd.to_datetime(df_limit_up['list_date']) > pd.Timedelta(days=30)]
+    del df_limit_up['list_date']
+    df_limit_up.insert(loc =3, column = '连板', value = '0')
+    for i in range(0, df_limit_up.shape[0]): 
         ts_code = df_limit_up.iloc[i]['ts_code']
         qty_limit_up = utils.get_qty_limit_up(ts_code,date)
-        df_limit_up['连板'][i] = qty_limit_up
+        df_limit_up.iloc[i,3] = qty_limit_up
     df_limit_up = df_limit_up.sort_values(by=['板块','连板'],ascending=False)
     savetoreport (date_now,df_limit_up,"每日涨停",mode = 'a', end = end)
 
@@ -320,34 +319,36 @@ def report_limit_TOPn_daily (engine,date,end = False):
         concat(round(tb_daily_limit_list.fl_ratio,2),'%s') as 封单量比,
         round(tb_daily_limit_list.strth,2) as 强度,
         round(tb_daily_data.pe,2) as 市盈率,
-        round(tb_daily_data.total_mv/1e4,2) as 总市值_亿
+        round(tb_daily_data.total_mv/1e4,2) as 总市值_亿,
+        tb_stock_basic.list_date
         from msstock.tb_daily_limit_list 
         left join msstock.tb_stock_basic 
         on (tb_daily_limit_list.ts_code = tb_stock_basic.ts_code) 
         left join msstock.tb_daily_data
         on (tb_daily_limit_list.ts_code = tb_daily_data.ts_code and tb_daily_limit_list.trade_date = tb_daily_data.trade_date)
-        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 6.0
-        and tb_daily_data.;
+        where tb_daily_limit_list.trade_date = '%s' and tb_daily_limit_list.limit = 'U' and tb_daily_limit_list.pct_chg > 8.0;
         ''' %('%%','%%',date_now )
 
     df_limit_up = pd.read_sql_query(sql, engine)
     df_limit_up.fillna(0, inplace=True)
     df_limit_up.replace('nan ', 0, inplace=True)
-    df_limit_up = df_limit_up[pd.to_datetime(date_str) - pd.to_datetime(df_limit_up['list_date']) <= pd.Timedelta(30)]
-    df_limit_up.insert(loc =3, column = '连板', value = '')
-    for i in range(0, len(df_limit_up)): 
+    df_limit_up = df_limit_up[pd.to_datetime(date_now) - pd.to_datetime(df_limit_up['list_date']) > pd.Timedelta(days=30)]
+    del df_limit_up['list_date']
+    df_limit_up.insert(loc =3, column = '连板', value = '0')
+    for i in range(0, df_limit_up.shape[0]): 
         ts_code = df_limit_up.iloc[i]['ts_code']
         qty_limit_up = utils.get_qty_limit_up(ts_code,date)
-        df_limit_up['连板'][i] = qty_limit_up
+        df_limit_up.iloc[i,3] = qty_limit_up
     df_limit_up = df_limit_up.sort_values(by=['连板'],ascending=False)
-    savetoreport (date_now,df_limit_up.head(10),"每日涨停板高度",mode = 'a', end = end)
+    df_limit_up = df_limit_up[pd.to_numeric(df_limit_up['连板']) > 1]
+    savetoreport (date_now,df_limit_up,"每日涨停板高度",mode = 'a', end = end)
 
 # 获取指定日期的股票的连板数
 def get_qty_limit_up(engine,code,date_str):
     qty_limit_up = 1
     previous_date = date_str
     for i in range(20):
-        previous_date = utils.get_previous_date(previous_date)
+        previous_date = utils.get_previous_trade_date(previous_date)
         sql = '''SELECT ts_code,trade_date FROM msstock.tb_daily_limit_list 
             where ts_code = '%s' and trade_date = '%s' and tb_daily_limit_list.limit = 'U';'''%(code,previous_date)
         df = pd.read_sql_query(sql, engine)
@@ -386,13 +387,13 @@ if __name__ == '__main__':
     print('start...')
     print('analyze daily data')
     fmt = '%Y%m%d'
-    end = datetime.datetime.now() -datetime.timedelta(days = 0)
-    start=datetime.datetime.now() -datetime.timedelta(days = 0)
+    end = datetime.datetime.now() -datetime.timedelta(days = 1)
+    start=datetime.datetime.now() -datetime.timedelta(days = 1)
 
     for i in range((end - start).days+1):
         date = start + datetime.timedelta(days=i)
         date_str = date.strftime('%Y%m%d')
-        date_str = '20220718'
+        #date_str = '20220718'
         print(date_str)  
         daily_analysis(date_str)
     print('end')
