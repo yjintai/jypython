@@ -24,8 +24,8 @@ def job():
 if __name__ == '__main__':
     
     print('开始')
-    end = datetime.datetime.now() -datetime.timedelta(days = 3)
-    start=datetime.datetime.now() -datetime.timedelta(days = 3)
+    end = datetime.datetime.now() -datetime.timedelta(days = 0)
+    start=datetime.datetime.now() -datetime.timedelta(days = 0)
     end_date = end.strftime('%Y%m%d')
     start_date = start.strftime('%Y%m%d')
     #start_date = '20150515'
@@ -42,8 +42,8 @@ if __name__ == '__main__':
         da.daily_analysis(date_str)
         reportfilename = mail.get_report_filename(date_str)
         content = mail.get_content_from_file(reportfilename)
-        '''if mail.send_mail("Daily Report",content):
+        if mail.send_mail("Daily Report",content):
             print ("发送成功")
         else:
-            print ("发送失败")'''
+            print ("发送失败")
     print('结束')
